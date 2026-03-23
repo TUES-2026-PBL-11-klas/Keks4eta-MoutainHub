@@ -9,9 +9,7 @@ __pycache__/
 venv/
 env/
 
-# Django
-media/
-staticfiles/
+
 
 # Node / React Native
 node_modules/
