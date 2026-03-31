@@ -26,23 +26,34 @@ const COLORS = {
   brown: "#83593D",
   primaryText: "#416AA6",
   mutedText: "#6D88B6",
-  card: "#F6F8FC",
-  fieldBg: "#EEF3FB",
+  card: "#EDF3FF",
+  fieldBg: "#F9FBFF",
   white: "#FFFFFF",
   dark: "#111111",
-  overlay: "rgba(255,255,255,0.72)",
 };
 
-export default function LoginScreen() {
+export default function SignupScreen() {
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
+
+  const [form, setForm] = useState({
+    name: "",
+    surname: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [acceptTerms, setAcceptTerms] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const updateField = (key, value) =>
+    setForm((current) => ({
+      ...current,
+      [key]: value,
+    }));
 
   return (
     <KeyboardAvoidingView
@@ -74,80 +85,119 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          <View style={styles.heroSection}>
-            <View style={styles.heroImage} />
+          <View style={styles.formCard}>
+            <Text style={styles.title}>Get Started</Text>
 
-            <View style={styles.formCard}>
-              <Text style={styles.title}>Welcome back!</Text>
-
-              <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Email</Text>
+            <View style={styles.nameRow}>
+              <View style={styles.halfField}>
+                <Text style={styles.label}>Name</Text>
                 <TextInput
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="Enter your email"
+                  value={form.name}
+                  onChangeText={(value) => updateField("name", value)}
+                  placeholder="First name"
                   placeholderTextColor="#90A6CB"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
                   style={styles.input}
                 />
               </View>
 
-              <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Password</Text>
-                <View style={styles.passwordWrapper}>
-                  <TextInput
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="Enter your password"
-                    placeholderTextColor="#90A6CB"
-                    secureTextEntry={!showPassword}
-                    style={styles.passwordInput}
-                  />
-                  <Pressable
-                    onPress={() => setShowPassword((current) => !current)}
-                    hitSlop={8}
-                    style={styles.passwordIcon}
-                  >
-                    <Ionicons
-                      name={showPassword ? "eye-outline" : "eye-off-outline"}
-                      size={20}
-                      color={COLORS.primaryText}
-                    />
-                  </Pressable>
-                </View>
+              <View style={styles.halfField}>
+                <Text style={styles.label}>Surname</Text>
+                <TextInput
+                  value={form.surname}
+                  onChangeText={(value) => updateField("surname", value)}
+                  placeholder="Last name"
+                  placeholderTextColor="#90A6CB"
+                  style={styles.input}
+                />
               </View>
+            </View>
 
-              <View style={styles.optionsRow}>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                value={form.email}
+                onChangeText={(value) => updateField("email", value)}
+                placeholder="Enter your email"
+                placeholderTextColor="#90A6CB"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={styles.input}
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Password</Text>
+              <View style={styles.passwordWrapper}>
+                <TextInput
+                  value={form.password}
+                  onChangeText={(value) => updateField("password", value)}
+                  placeholder="Create a password"
+                  placeholderTextColor="#90A6CB"
+                  secureTextEntry={!showPassword}
+                  style={styles.passwordInput}
+                />
                 <Pressable
-                  onPress={() => setRememberMe((current) => !current)}
-                  style={styles.checkboxRow}
+                  onPress={() => setShowPassword((current) => !current)}
+                  hitSlop={8}
+                  style={styles.passwordIcon}
                 >
                   <Ionicons
-                    name={rememberMe ? "checkmark-circle" : "ellipse-outline"}
-                    size={18}
+                    name={showPassword ? "eye-outline" : "eye-off-outline"}
+                    size={20}
                     color={COLORS.primaryText}
                   />
-                  <Text style={styles.optionText}>Remember me</Text>
                 </Pressable>
+              </View>
+            </View>
 
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Confirm Password</Text>
+              <View style={styles.passwordWrapper}>
+                <TextInput
+                  value={form.confirmPassword}
+                  onChangeText={(value) => updateField("confirmPassword", value)}
+                  placeholder="Repeat your password"
+                  placeholderTextColor="#90A6CB"
+                  secureTextEntry={!showConfirmPassword}
+                  style={styles.passwordInput}
+                />
+                <Pressable
+                  onPress={() => setShowConfirmPassword((current) => !current)}
+                  hitSlop={8}
+                  style={styles.passwordIcon}
+                >
+                  <Ionicons
+                    name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+                    size={20}
+                    color={COLORS.primaryText}
+                  />
+                </Pressable>
+              </View>
+            </View>
+
+            <Pressable
+              onPress={() => setAcceptTerms((current) => !current)}
+              style={styles.checkboxRow}
+            >
+              <Ionicons
+                name={acceptTerms ? "checkmark-circle" : "ellipse-outline"}
+                size={18}
+                color={COLORS.primaryText}
+              />
+              <Text style={styles.optionText}>I accept privacy terms</Text>
+            </Pressable>
+
+            <Pressable style={styles.primaryButton}>
+              <Text style={styles.primaryButtonText}>Sign Up</Text>
+            </Pressable>
+
+            <View style={styles.footerRow}>
+              <Text style={styles.footerText}>Already have an account? </Text>
+              <Link href="/login" asChild>
                 <Pressable>
-                  <Text style={styles.optionText}>Forgot password?</Text>
+                  <Text style={styles.footerLink}>Log In</Text>
                 </Pressable>
-              </View>
-
-              <Pressable style={styles.primaryButton}>
-                <Text style={styles.primaryButtonText}>Log In</Text>
-              </Pressable>
-
-              <View style={styles.footerRow}>
-                <Text style={styles.footerText}>Don’t have an account? </Text>
-                <Link href="/signup" asChild>
-                  <Pressable>
-                    <Text style={styles.footerLink}>Sign up</Text>
-                  </Pressable>
-                </Link>
-              </View>
+              </Link>
             </View>
           </View>
         </ScrollView>
@@ -172,8 +222,10 @@ function createStyles(isCompact) {
       paddingTop: Platform.OS === "android" ? 54 : 68,
       paddingBottom: 36,
       paddingHorizontal: isCompact ? 16 : 32,
+      alignItems: "center",
     },
     topBar: {
+      width: "100%",
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
@@ -204,27 +256,13 @@ function createStyles(isCompact) {
       borderRadius: 999,
       backgroundColor: COLORS.dark,
     },
-    heroSection: {
-      alignItems: "center",
-    },
-    heroImage: {
-      width: "100%",
-      maxWidth: 1120,
-      minHeight: isCompact ? 220 : 430,
-      borderRadius: 30,
-      backgroundColor: COLORS.brown,
-      overflow: "hidden",
-      marginBottom: isCompact ? -30 : -120,
-      borderWidth: 1,
-      borderColor: "rgba(131, 89, 61, 0.18)",
-    },
     formCard: {
       width: "100%",
-      maxWidth: 920,
-      backgroundColor: COLORS.overlay,
-      borderRadius: 28,
+      maxWidth: 980,
+      backgroundColor: COLORS.card,
+      borderRadius: 30,
       paddingHorizontal: isCompact ? 20 : 42,
-      paddingVertical: isCompact ? 24 : 36,
+      paddingVertical: isCompact ? 24 : 34,
       shadowColor: "#2B4D7A",
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.12,
@@ -234,9 +272,17 @@ function createStyles(isCompact) {
     title: {
       textAlign: "center",
       color: COLORS.primaryText,
-      fontSize: isCompact ? 34 : 48,
+      fontSize: isCompact ? 34 : 50,
       fontWeight: "800",
-      marginBottom: isCompact ? 20 : 28,
+      marginBottom: isCompact ? 20 : 24,
+    },
+    nameRow: {
+      flexDirection: isCompact ? "column" : "row",
+      gap: 18,
+      marginBottom: 18,
+    },
+    halfField: {
+      flex: 1,
     },
     fieldGroup: {
       marginBottom: 18,
@@ -277,19 +323,13 @@ function createStyles(isCompact) {
     passwordIcon: {
       marginLeft: 12,
     },
-    optionsRow: {
-      flexDirection: isCompact ? "column" : "row",
-      justifyContent: "space-between",
-      alignItems: isCompact ? "flex-start" : "center",
-      gap: 12,
-      marginTop: 4,
-      marginBottom: 24,
-      paddingHorizontal: 6,
-    },
     checkboxRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
+      marginTop: 8,
+      marginBottom: 24,
+      paddingHorizontal: 6,
     },
     optionText: {
       color: COLORS.primaryText,
@@ -304,7 +344,7 @@ function createStyles(isCompact) {
       alignItems: "center",
       justifyContent: "center",
       paddingVertical: 16,
-      marginBottom: 22,
+      marginBottom: 18,
     },
     primaryButtonText: {
       color: COLORS.white,
