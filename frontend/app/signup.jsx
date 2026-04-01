@@ -5,7 +5,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -69,10 +68,7 @@ export default function SignupScreen() {
         style={styles.background}
         imageStyle={styles.backgroundImage}
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+        <View style={styles.scrollContent}>
           <View style={styles.topBar}>
             <Image source={LogoMark} style={styles.logoMark} contentFit="contain" />
             <Image source={LogoText} style={styles.logoText} contentFit="contain" />
@@ -200,7 +196,7 @@ export default function SignupScreen() {
               </Link>
             </View>
           </View>
-        </ScrollView>
+        </View>
       </ImageBackground>
     </KeyboardAvoidingView>
   );
@@ -219,9 +215,10 @@ function createStyles(isCompact) {
       opacity: 0.23,
     },
     scrollContent: {
-      paddingTop: Platform.OS === "android" ? 54 : 68,
-      paddingBottom: 36,
-      paddingHorizontal: isCompact ? 16 : 32,
+      flex: 1,
+      paddingTop: Platform.OS === "android" ? 18 : 22,
+      paddingBottom: 12,
+      paddingHorizontal: isCompact ? 14 : 28,
       alignItems: "center",
     },
     topBar: {
@@ -229,7 +226,7 @@ function createStyles(isCompact) {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      marginBottom: isCompact ? 24 : 34,
+      marginBottom: isCompact ? 10 : 12,
     },
     logoMark: {
       width: isCompact ? 44 : 56,
@@ -258,11 +255,11 @@ function createStyles(isCompact) {
     },
     formCard: {
       width: "100%",
-      maxWidth: 980,
+      maxWidth: 820,
       backgroundColor: COLORS.card,
-      borderRadius: 30,
-      paddingHorizontal: isCompact ? 20 : 42,
-      paddingVertical: isCompact ? 24 : 34,
+      borderRadius: 26,
+      paddingHorizontal: isCompact ? 16 : 28,
+      paddingVertical: isCompact ? 16 : 18,
       shadowColor: "#2B4D7A",
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.12,
@@ -272,30 +269,30 @@ function createStyles(isCompact) {
     title: {
       textAlign: "center",
       color: COLORS.primaryText,
-      fontSize: isCompact ? 34 : 50,
+      fontSize: isCompact ? 26 : 34,
       fontWeight: "800",
-      marginBottom: isCompact ? 20 : 24,
+      marginBottom: isCompact ? 10 : 12,
     },
     nameRow: {
       flexDirection: isCompact ? "column" : "row",
-      gap: 18,
-      marginBottom: 18,
+      gap: 10,
+      marginBottom: 10,
     },
     halfField: {
       flex: 1,
     },
     fieldGroup: {
-      marginBottom: 18,
+      marginBottom: 10,
     },
     label: {
       color: COLORS.blue,
-      fontSize: isCompact ? 18 : 22,
+      fontSize: isCompact ? 15 : 17,
       fontWeight: "700",
-      marginBottom: 10,
+      marginBottom: 4,
       marginLeft: 8,
     },
     input: {
-      height: isCompact ? 54 : 62,
+      height: isCompact ? 40 : 44,
       borderWidth: 2,
       borderColor: COLORS.blue,
       borderRadius: 999,
@@ -305,15 +302,15 @@ function createStyles(isCompact) {
       fontSize: isCompact ? 16 : 18,
     },
     passwordWrapper: {
-      minHeight: isCompact ? 54 : 62,
+      minHeight: isCompact ? 40 : 44,
       borderWidth: 2,
       borderColor: COLORS.blue,
       borderRadius: 999,
       backgroundColor: COLORS.fieldBg,
       flexDirection: "row",
       alignItems: "center",
-      paddingLeft: 20,
-      paddingRight: 14,
+      paddingLeft: 16,
+      paddingRight: 12,
     },
     passwordInput: {
       flex: 1,
@@ -327,28 +324,28 @@ function createStyles(isCompact) {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
-      marginTop: 8,
-      marginBottom: 24,
+      marginTop: 4,
+      marginBottom: 12,
       paddingHorizontal: 6,
     },
     optionText: {
       color: COLORS.primaryText,
-      fontSize: isCompact ? 16 : 18,
+      fontSize: isCompact ? 14 : 16,
       fontWeight: "500",
     },
     primaryButton: {
       alignSelf: "center",
-      width: isCompact ? "100%" : 360,
+      width: isCompact ? "100%" : 290,
       backgroundColor: COLORS.primaryText,
       borderRadius: 999,
       alignItems: "center",
       justifyContent: "center",
-      paddingVertical: 16,
-      marginBottom: 18,
+      paddingVertical: 10,
+      marginBottom: 10,
     },
     primaryButtonText: {
       color: COLORS.white,
-      fontSize: isCompact ? 22 : 24,
+      fontSize: isCompact ? 17 : 18,
       fontWeight: "800",
     },
     footerRow: {
@@ -359,11 +356,11 @@ function createStyles(isCompact) {
     },
     footerText: {
       color: COLORS.mutedText,
-      fontSize: isCompact ? 16 : 18,
+      fontSize: isCompact ? 14 : 16,
     },
     footerLink: {
       color: COLORS.primaryText,
-      fontSize: isCompact ? 16 : 18,
+      fontSize: isCompact ? 14 : 16,
       fontWeight: "800",
     },
   });
