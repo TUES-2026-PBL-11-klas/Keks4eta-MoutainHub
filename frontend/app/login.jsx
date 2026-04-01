@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Link, Stack } from "expo-router";
 
 import LineBackground from "../assets/images/group-R5.png";
+import HeroImage from "../assets/images/image.png";
 import LogoMark from "../assets/images/logo.svg";
 import LogoText from "../assets/images/logotext.svg";
 
@@ -71,7 +72,7 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.heroSection}>
-            <View style={styles.heroImage} />
+            <Image source={HeroImage} style={styles.heroImage} resizeMode="cover" />
 
             <View style={styles.formCard}>
               <Text style={styles.title}>Welcome back!</Text>
@@ -178,11 +179,11 @@ function createStyles(isCompact) {
     },
     logoMark: {
       width: isCompact ? 44 : 56,
-      height: isCompact ? 44 : 56,
+      height: isCompact ? 55 : 60,
     },
     logoText: {
-      width: isCompact ? 170 : 240,
-      height: isCompact ? 48 : 64,
+      width: isCompact ? 310 : 430,
+      height: isCompact ? 60 : 75,
     },
     topActions: {
       flexDirection: "row",
@@ -205,19 +206,18 @@ function createStyles(isCompact) {
       alignItems: "center",
     },
     heroImage: {
-      width: "100%",
+      top: 0,
       maxWidth: 1120,
-      minHeight: isCompact ? 120 : 210,
+      height: 330,
       borderRadius: 30,
       overflow: "hidden",
       marginBottom: isCompact ? -12 : -42,
-      borderWidth: 1,
-      borderColor: "rgba(131, 89, 61, 0.18)",
     },
     formCard: {
+      top: -180,
       width: "100%",
       maxWidth: 820,
-      backgroundColor: COLORS.overlay,
+      backgroundColor: COLORS.white,
       borderRadius: 28,
       paddingHorizontal: isCompact ? 16 : 30,
       paddingVertical: isCompact ? 16 : 20,
