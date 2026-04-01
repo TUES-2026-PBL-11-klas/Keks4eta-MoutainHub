@@ -230,11 +230,11 @@ function createStyles(isCompact) {
     },
     logoMark: {
       width: isCompact ? 44 : 56,
-      height: isCompact ? 44 : 56,
+      height: isCompact ? 55 : 60,
     },
     logoText: {
-      width: isCompact ? 170 : 240,
-      height: isCompact ? 48 : 64,
+      width: isCompact ? 310 : 430,
+      height: isCompact ? 60 : 75,
     },
     topActions: {
       flexDirection: "row",
