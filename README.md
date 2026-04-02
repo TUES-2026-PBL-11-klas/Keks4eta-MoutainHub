@@ -4,7 +4,7 @@ Mountain Hub е платформа за туристи, MTB колоездачи
 
 ## Технологии
 - Frontend: React Native
-- Backend: Django + Django REST Framework
+- Backend: Flask
 - Database: PostgreSQL + PostGIS
 - Storage: Supabase
 - Deployment: Docker + Kubernetes
