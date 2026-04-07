@@ -179,7 +179,11 @@ export default function HomeConceptScreen() {
                   <Text style={styles.signupButtonText}>Sign up</Text>
                 </Pressable>
 
-                <Pressable style={styles.profileDot} onPress={() => {}} hitSlop={8} />
+                <Pressable
+                  style={styles.profileDot}
+                  onPress={() => router.push("/profile")}
+                  hitSlop={8}
+                />
               </View>
             </View>
 

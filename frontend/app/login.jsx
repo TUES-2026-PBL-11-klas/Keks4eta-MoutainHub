@@ -14,12 +14,13 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Link, Stack } from "expo-router";
+import { Link, Stack, useRouter } from "expo-router";
 
 import LineBackground from "../assets/images/group-R5.png";
 import HeroImage from "../assets/images/image.png";
 import LogoMark from "../assets/images/logo.svg";
 import LogoText from "../assets/images/logotext.svg";
+import { setLoggedIn } from "../lib/auth";
 
 const COLORS = {
   green: "#00DF56",
@@ -35,6 +36,7 @@ const COLORS = {
 };
 
 export default function LoginScreen() {
+  const router = useRouter();
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
 
@@ -72,7 +74,7 @@ export default function LoginScreen() {
             </Link>
 
             <View style={styles.topActions}>
-              <Link href="/(tabs)" asChild>
+              <Link href="/profile" asChild>
                 <Pressable style={styles.profileDot} hitSlop={8} />
               </Link>
             </View>
@@ -146,7 +148,13 @@ export default function LoginScreen() {
                 </Pressable>
               </View>
 
-              <Pressable style={styles.primaryButton}>
+              <Pressable
+                style={styles.primaryButton}
+                onPress={async () => {
+                  await setLoggedIn(true);
+                  router.replace("/(tabs)");
+                }}
+              >
                 <Text style={styles.primaryButtonText}>Log In</Text>
               </Pressable>
 
