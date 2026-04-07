@@ -460,6 +460,7 @@ function createStyles(isCompact: boolean) {
       borderRadius: 28,
       overflow: "hidden",
     },
+
   });
 }
 
