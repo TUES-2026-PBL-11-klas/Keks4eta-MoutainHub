@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   ImageBackground,
   Platform,
@@ -15,6 +15,7 @@ import { Stack, useRouter } from "expo-router";
 import { Image } from "expo-image";
 
 import LineBackground from "@/assets/images/group-R5.svg";
+import { PostDetailsModal, type FeedPost } from "@/components/post-details-modal";
 
 const COLORS = {
   green: "#00DF56",
@@ -37,9 +38,10 @@ const MODE_CONFIG: Record<Mode, { label: string; color: string; route: "/walk" |
     mtb: { label: "MTB Trail", color: COLORS.brown, route: "/mtb" },
   };
 
-const POSTS = [
+const POSTS: FeedPost[] = [
   {
     id: "w1",
+    userId: "u1",
     user: "Ivan Ivanov",
     title: "completed a trail",
     subtitle: "Vitosha • 9.8 km • Easy",
@@ -47,6 +49,7 @@ const POSTS = [
   },
   {
     id: "w2",
+    userId: "u2",
     user: "Maria Petrova",
     title: "added a new trail",
     subtitle: "Rila • 12.1 km • Medium",
@@ -65,6 +68,8 @@ export default function WalkHome() {
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
   const scrollRef = useRef<ScrollView | null>(null);
+  const [activePost, setActivePost] = useState<FeedPost | null>(null);
+  const [postOpen, setPostOpen] = useState(false);
 
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
 
@@ -137,7 +142,14 @@ export default function WalkHome() {
 
               <View style={styles.postList}>
                 {POSTS.map((p) => (
-                  <View key={p.id} style={styles.postCard}>
+                  <Pressable
+                    key={p.id}
+                    style={styles.postCard}
+                    onPress={() => {
+                      setActivePost(p);
+                      setPostOpen(true);
+                    }}
+                  >
                     <View style={styles.postHeader}>
                       <View style={styles.userDot} />
                       <View style={{ flex: 1 }}>
@@ -153,7 +165,7 @@ export default function WalkHome() {
                         <Image key={idx} source={src} style={styles.photo} contentFit="cover" />
                       ))}
                     </ScrollView>
-                  </View>
+                  </Pressable>
                 ))}
               </View>
             </View>
@@ -190,6 +202,16 @@ export default function WalkHome() {
           </View>
         </ScrollView>
       </ImageBackground>
+
+      <PostDetailsModal
+        visible={postOpen}
+        post={activePost}
+        onClose={() => setPostOpen(false)}
+        onViewProfile={(userId) => {
+          setPostOpen(false);
+          router.push(`/user/${userId}` as any);
+        }}
+      />
     </View>
   );
 }
