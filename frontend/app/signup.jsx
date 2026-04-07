@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, Stack } from "expo-router";
-
+ 
 import LineBackground from "../assets/images/group-R5.png";
 import LogoMark from "../assets/images/logo.svg";
 import LogoText from "../assets/images/logotext.svg";
@@ -70,14 +70,20 @@ export default function SignupScreen() {
       >
         <View style={styles.scrollContent}>
           <View style={styles.topBar}>
-            <Image source={LogoMark} style={styles.logoMark} contentFit="contain" />
-            <Image source={LogoText} style={styles.logoText} contentFit="contain" />
+            <Link href="/(tabs)" asChild>
+              <Pressable style={styles.brandRow} hitSlop={8}>
+                <Image source={LogoMark} style={styles.logoMark} contentFit="contain" />
+                <Image source={LogoText} style={styles.logoText} contentFit="contain" />
+              </Pressable>
+            </Link>
 
             <View style={styles.topActions}>
               <Pressable style={styles.iconButton}>
                 <Ionicons name="search-outline" size={20} color={COLORS.dark} />
               </Pressable>
-              <View style={styles.profileDot} />
+              <Link href="/(tabs)" asChild>
+                <Pressable style={styles.profileDot} hitSlop={8} />
+              </Link>
             </View>
           </View>
 
@@ -228,11 +234,18 @@ function createStyles(isCompact) {
       justifyContent: "space-between",
       marginBottom: isCompact ? 10 : 12,
     },
+    brandRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: isCompact ? 8 : 10,
+      flexShrink: 1,
+    },
     logoMark: {
       width: isCompact ? 44 : 56,
       height: isCompact ? 55 : 60,
     },
     logoText: {
+      marginLeft: 350,
       width: isCompact ? 310 : 430,
       height: isCompact ? 60 : 75,
     },

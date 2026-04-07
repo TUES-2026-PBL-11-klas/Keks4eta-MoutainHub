@@ -3,6 +3,7 @@ import {
   Image,
   ImageBackground,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   StatusBar,
@@ -41,6 +42,9 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
 
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
 
@@ -60,14 +64,17 @@ export default function LoginScreen() {
       >
         <View style={styles.scrollContent}>
           <View style={styles.topBar}>
-            <Image source={LogoMark} style={styles.logoMark} contentFit="contain" />
-            <Image source={LogoText} style={styles.logoText} contentFit="contain" />
+            <Link href="/(tabs)" asChild>
+              <Pressable style={styles.brandRow} hitSlop={8}>
+                <Image source={LogoMark} style={styles.logoMark} contentFit="contain" />
+                <Image source={LogoText} style={styles.logoText} contentFit="contain" />
+              </Pressable>
+            </Link>
 
             <View style={styles.topActions}>
-              <Pressable style={styles.iconButton}>
-                <Ionicons name="search-outline" size={20} color={COLORS.dark} />
-              </Pressable>
-              <View style={styles.profileDot} />
+              <Link href="/(tabs)" asChild>
+                <Pressable style={styles.profileDot} hitSlop={8} />
+              </Link>
             </View>
           </View>
 
@@ -128,7 +135,13 @@ export default function LoginScreen() {
                   <Text style={styles.optionText}>Remember me</Text>
                 </Pressable>
 
-                <Pressable>
+                <Pressable
+                  onPress={() => {
+                    setForgotSent(false);
+                    setForgotEmail(email);
+                    setForgotOpen(true);
+                  }}
+                >
                   <Text style={styles.optionText}>Forgot password?</Text>
                 </Pressable>
               </View>
@@ -149,6 +162,54 @@ export default function LoginScreen() {
           </View>
         </View>
       </ImageBackground>
+
+      <Modal
+        visible={forgotOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setForgotOpen(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setForgotOpen(false)}>
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <Text style={styles.modalTitle}>Forgot your password?</Text>
+            <Text style={styles.modalText}>
+              Enter your email and we’ll send you instructions to reset your password.
+            </Text>
+
+            <View style={styles.modalFieldGroup}>
+              <Text style={styles.modalLabel}>Email</Text>
+              <TextInput
+                value={forgotEmail}
+                onChangeText={setForgotEmail}
+                placeholder="Enter your email"
+                placeholderTextColor="#90A6CB"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={styles.modalInput}
+              />
+            </View>
+
+            {forgotSent ? (
+              <Text style={styles.modalSuccess}>If the email exists, you’ll receive a reset link.</Text>
+            ) : null}
+
+            <View style={styles.modalButtonsRow}>
+              <Pressable
+                style={[styles.modalButton, styles.modalButtonSecondary]}
+                onPress={() => setForgotOpen(false)}
+              >
+                <Text style={[styles.modalButtonText, styles.modalButtonSecondaryText]}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.modalButtonPrimary]}
+                onPress={() => setForgotSent(true)}
+              >
+                <Text style={styles.modalButtonText}>Send</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -177,11 +238,18 @@ function createStyles(isCompact) {
       justifyContent: "space-between",
       marginBottom: isCompact ? 10 : 14,
     },
+    brandRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: isCompact ? 8 : 10,
+      flexShrink: 1,
+    },
     logoMark: {
       width: isCompact ? 44 : 56,
       height: isCompact ? 55 : 60,
     },
     logoText: {
+      marginLeft: 350,
       width: isCompact ? 310 : 430,
       height: isCompact ? 60 : 75,
     },
@@ -321,6 +389,98 @@ function createStyles(isCompact) {
       color: COLORS.primaryText,
       fontSize: isCompact ? 16 : 18,
       fontWeight: "800",
+    },
+
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(17,17,17,0.35)",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 16,
+    },
+    modalCard: {
+      width: "100%",
+      maxWidth: 520,
+      backgroundColor: COLORS.white,
+      borderRadius: 22,
+      padding: 16,
+      borderWidth: 2,
+      borderColor: COLORS.blue,
+      shadowColor: "#2B4D7A",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.16,
+      shadowRadius: 18,
+      elevation: 10,
+    },
+    modalTitle: {
+      color: COLORS.primaryText,
+      fontSize: 20,
+      fontWeight: "900",
+      textAlign: "center",
+      marginBottom: 6,
+    },
+    modalText: {
+      color: COLORS.mutedText,
+      fontSize: 14,
+      fontWeight: "600",
+      textAlign: "center",
+      marginBottom: 12,
+      lineHeight: 20,
+    },
+    modalFieldGroup: {
+      marginBottom: 10,
+    },
+    modalLabel: {
+      color: COLORS.blue,
+      fontSize: 14,
+      fontWeight: "800",
+      marginBottom: 4,
+      marginLeft: 8,
+    },
+    modalInput: {
+      height: 44,
+      borderWidth: 2,
+      borderColor: COLORS.blue,
+      borderRadius: 999,
+      backgroundColor: COLORS.fieldBg,
+      paddingHorizontal: 18,
+      color: COLORS.primaryText,
+      fontSize: 16,
+    },
+    modalSuccess: {
+      color: COLORS.primaryText,
+      fontSize: 13,
+      fontWeight: "700",
+      textAlign: "center",
+      marginBottom: 10,
+    },
+    modalButtonsRow: {
+      flexDirection: "row",
+      gap: 10,
+      marginTop: 6,
+    },
+    modalButton: {
+      flex: 1,
+      borderRadius: 999,
+      paddingVertical: 10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    modalButtonPrimary: {
+      backgroundColor: COLORS.primaryText,
+    },
+    modalButtonSecondary: {
+      backgroundColor: COLORS.white,
+      borderWidth: 2,
+      borderColor: COLORS.blue,
+    },
+    modalButtonText: {
+      color: COLORS.white,
+      fontSize: 15,
+      fontWeight: "900",
+    },
+    modalButtonSecondaryText: {
+      color: COLORS.primaryText,
     },
   });
 }

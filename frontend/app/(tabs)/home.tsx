@@ -1,17 +1,21 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
+  ImageBackground,
   Platform,
   Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   View,
   useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Stack, useRouter } from "expo-router";
+import { Stack, usePathname, useRouter } from "expo-router";
 import { Image } from "expo-image";
+
+import LineBackground from "@/assets/images/group-R5.svg";
 
 
 const COLORS = {
@@ -36,15 +40,58 @@ const MODE_CONFIG: Record<TrailMode, { label: string; color: string; route: "/wa
 
 export default function HomeConceptScreen() {
   const router = useRouter();
+  const pathname = usePathname();
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
   const [selectedMode, setSelectedMode] = useState<TrailMode>("mtb");
+  const scrollRef = useRef<ScrollView | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
 
+  const activity = useMemo(
+    () => [
+      {
+        id: "1",
+        name: "Ivan Ivanov",
+        title: "visited Rila Mountain",
+        body: "Lorem ipsum dolor sit amet. In facilis veritat",
+      },
+      {
+        id: "2",
+        name: "Maria Petrova",
+        title: "completed MTB Trail",
+        body: "Beautiful day and great views along the ridge.",
+      },
+      {
+        id: "3",
+        name: "Georgi Georgiev",
+        title: "saved a Walk Trail",
+        body: "Perfect for beginners; very chill route.",
+      },
+    ],
+    []
+  );
+
+  const filteredActivity = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return activity;
+    return activity.filter((item) =>
+      `${item.name} ${item.title} ${item.body}`.toLowerCase().includes(q)
+    );
+  }, [activity, searchQuery]);
+
+  const refreshHome = () => {
+    setSelectedMode("mtb");
+    setSearchQuery("");
+    setSearchOpen(false);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    router.replace(pathname as any);
+  };
+
   const goToMode = (mode: TrailMode) => {
     setSelectedMode(mode);
-    // Typed routes will validate once the pages exist; cast keeps TS happy meanwhile.
     router.push(MODE_CONFIG[mode].route as any);
   };
 
@@ -53,54 +100,114 @@ export default function HomeConceptScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="dark-content" />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.topBar}>
-          <View style={styles.brandRow}>
-            <Image
-              source={require("@/assets/images/logo.svg")}
-              style={styles.logoMark}
-              contentFit="contain"
-            />
-            <Image
-              source={require("@/assets/images/logotext.svg")}
-              style={styles.logoText}
-              contentFit="contain"
-            />
-          </View>
+      <ImageBackground
+        source={LineBackground}
+        resizeMode="cover"
+        style={styles.background}
+        imageStyle={styles.backgroundImage}
+      >
+        <ScrollView
+          ref={(node) => {
+            scrollRef.current = node;
+          }}
+          stickyHeaderIndices={[0]}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.stickyHeader}>
+            <View style={styles.topBar}>
+              <Pressable onPress={refreshHome} style={styles.brandRow} hitSlop={8}>
+                <Image
+                  source={require("@/assets/images/logo.svg")}
+                  style={styles.logoMark}
+                  contentFit="contain"
+                />
+              </Pressable>
 
-          <View style={styles.modePills}>
-            {(Object.keys(MODE_CONFIG) as TrailMode[]).map((mode) => {
-              const cfg = MODE_CONFIG[mode];
-              const isActive = selectedMode === mode;
-              return (
+              <View style={styles.modePills}>
+                {(Object.keys(MODE_CONFIG) as TrailMode[]).map((mode) => {
+                  const cfg = MODE_CONFIG[mode];
+                  const isActive = selectedMode === mode;
+                  return (
+                    <Pressable
+                      key={mode}
+                      onPress={() => goToMode(mode)}
+                      style={({ pressed }) => [
+                        styles.pill,
+                        isActive ? styles.pillActive : styles.pillInactive,
+                        { borderColor: cfg.color },
+                        pressed && styles.pillPressed,
+                      ]}
+                    >
+                      <View style={[styles.pillDot, { backgroundColor: cfg.color }]} />
+                      <Text style={[styles.pillText, isActive && styles.pillTextActive]}>
+                        {cfg.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <View style={styles.topActions}>
+                {!isCompact ? (
+                  <View style={styles.searchInline}>
+                    <Ionicons name="search-outline" size={16} color={COLORS.mutedText} />
+                    <TextInput
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      placeholder="Search activity..."
+                      placeholderTextColor="#90A6CB"
+                      style={styles.searchInput}
+                      returnKeyType="search"
+                    />
+                  </View>
+                ) : (
+                  <Pressable
+                    style={styles.iconButton}
+                    onPress={() => setSearchOpen((v) => !v)}
+                    hitSlop={8}
+                  >
+                    <Ionicons name="search-outline" size={20} color={COLORS.dark} />
+                  </Pressable>
+                )}
+
                 <Pressable
-                  key={mode}
-                  onPress={() => goToMode(mode)}
-                  style={({ pressed }) => [
-                    styles.pill,
-                    isActive ? styles.pillActive : styles.pillInactive,
-                    { borderColor: cfg.color },
-                    pressed && styles.pillPressed,
-                  ]}
+                  style={styles.signupButton}
+                  onPress={() => router.push("/signup")}
+                  hitSlop={8}
                 >
-                  <View style={[styles.pillDot, { backgroundColor: cfg.color }]} />
-                  <Text style={[styles.pillText, isActive && styles.pillTextActive]}>
-                    {cfg.label}
-                  </Text>
+                  <Text style={styles.signupButtonText}>Sign up</Text>
                 </Pressable>
-              );
-            })}
+
+                <Pressable style={styles.profileDot} onPress={() => {}} hitSlop={8} />
+              </View>
+            </View>
+
+            {isCompact && searchOpen ? (
+              <View style={styles.searchRow}>
+                <Ionicons name="search-outline" size={16} color={COLORS.mutedText} />
+                <TextInput
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholder="Search activity..."
+                  placeholderTextColor="#90A6CB"
+                  style={styles.searchInput}
+                  returnKeyType="search"
+                />
+                <Pressable onPress={() => setSearchQuery("")} hitSlop={8} style={styles.clearButton}>
+                  <Ionicons name="close-circle" size={18} color={COLORS.primaryText} />
+                </Pressable>
+              </View>
+            ) : null}
           </View>
 
-          <View style={styles.topActions}>
-            <Pressable style={styles.iconButton} onPress={() => router.push("/explore")}>
-              <Ionicons name="search-outline" size={20} color={COLORS.dark} />
-            </Pressable>
-            <View style={styles.profileDot} />
-          </View>
-        </View>
-
-        <Text style={styles.title}>Mountain Hub</Text>
+        <Pressable onPress={refreshHome} style={styles.titleWrap} hitSlop={8}>
+          <Image
+            source={require("@/assets/images/logotext.svg")}
+            style={styles.titleLogo}
+            contentFit="contain"
+          />
+        </Pressable>
 
         <View style={styles.mainRow}>
           <View style={styles.mapCard}>
@@ -124,15 +231,15 @@ export default function HomeConceptScreen() {
             <Text style={styles.sectionTitle}>Latest activity</Text>
 
             <View style={styles.feedList}>
-              {Array.from({ length: 3 }).map((_, idx) => (
-                <View key={idx} style={styles.feedItem}>
+              {filteredActivity.map((item) => (
+                <View key={item.id} style={styles.feedItem}>
                   <View style={styles.feedDot} />
                   <View style={styles.feedTextCol}>
-                    <Text style={styles.feedTitle}>Ivan Ivanov</Text>
+                    <Text style={styles.feedTitle}>{item.name}</Text>
                     <Text style={styles.feedSubtitle}>
-                      visited Rila Mountain <Text style={styles.pin}>📍</Text>
+                      {item.title} <Text style={styles.pin}>📍</Text>
                     </Text>
-                    <Text style={styles.feedBody}>Lorem ipsum dolor sit amet. In facilis veritat</Text>
+                    <Text style={styles.feedBody}>{item.body}</Text>
                   </View>
                 </View>
               ))}
@@ -142,8 +249,9 @@ export default function HomeConceptScreen() {
               <Text style={styles.loadMoreText}>Load More</Text>
             </Pressable>
           </View>
-        </View>
-      </ScrollView>
+          </View>
+        </ScrollView>
+      </ImageBackground>
     </View>
   );
 }
@@ -154,17 +262,33 @@ function createStyles(isCompact: boolean) {
       flex: 1,
       backgroundColor: COLORS.white,
     },
+    background: {
+      flex: 1,
+    },
+    backgroundImage: {
+      opacity: 0.23,
+    },
     content: {
       paddingTop: Platform.OS === "android" ? 18 : 22,
       paddingBottom: 18,
       paddingHorizontal: isCompact ? 14 : 28,
+    },
+    stickyHeader: {
+      backgroundColor: "rgba(255,255,255,0.92)",
+      borderRadius: 18,
+      paddingHorizontal: isCompact ? 8 : 10,
+      paddingTop: 6,
+      paddingBottom: isCompact ? 8 : 6,
+      marginBottom: isCompact ? 8 : 10,
+      borderWidth: 1,
+      borderColor: "rgba(154,184,244,0.55)",
     },
     topBar: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       gap: isCompact ? 10 : 16,
-      marginBottom: isCompact ? 8 : 12,
+      marginBottom: 0,
     },
     brandRow: {
       flexDirection: "row",
@@ -182,6 +306,7 @@ function createStyles(isCompact: boolean) {
       height: isCompact ? 36 : 48,
     },
     modePills: {
+      marginLeft: 280,
       flex: 1,
       flexDirection: "row",
       justifyContent: "center",
@@ -228,7 +353,57 @@ function createStyles(isCompact: boolean) {
     topActions: {
       flexDirection: "row",
       alignItems: "center",
-      gap: isCompact ? 10 : 16,
+      gap: isCompact ? 8 : 10,
+    },
+    searchInline: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      borderWidth: 1,
+      borderColor: "rgba(154,184,244,0.8)",
+      backgroundColor: COLORS.fieldBg,
+      borderRadius: 999,
+      paddingHorizontal: 12,
+      height: isCompact ? 34 : 38,
+      width: isCompact ? 160 : 240,
+    },
+    searchRow: {
+      marginTop: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      borderWidth: 1,
+      borderColor: "rgba(154,184,244,0.8)",
+      backgroundColor: COLORS.fieldBg,
+      borderRadius: 999,
+      paddingHorizontal: 12,
+      height: 38,
+    },
+    searchInput: {
+      flex: 1,
+      color: COLORS.primaryText,
+      fontSize: 14,
+      fontWeight: "700",
+      paddingVertical: 0,
+    },
+    clearButton: {
+      paddingLeft: 6,
+    },
+    signupButton: {
+      height: isCompact ? 34 : 38,
+      borderRadius: 999,
+      paddingHorizontal: isCompact ? 10 : 12,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 2,
+      borderColor: COLORS.primaryText,
+      backgroundColor: COLORS.white,
+    },
+    signupButtonText: {
+      color: COLORS.primaryText,
+      fontSize: isCompact ? 12 : 13,
+      fontWeight: "900",
+      letterSpacing: 0.2,
     },
     iconButton: {
       width: isCompact ? 34 : 40,
@@ -242,14 +417,16 @@ function createStyles(isCompact: boolean) {
       borderRadius: 999,
       backgroundColor: COLORS.dark,
     },
-    title: {
-      textAlign: "center",
-      color: COLORS.primaryText,
-      fontSize: isCompact ? 34 : 54,
-      fontWeight: "900",
-      letterSpacing: 0.5,
+    titleWrap: {
+      alignSelf: "center",
       marginTop: isCompact ? 6 : 10,
       marginBottom: isCompact ? 12 : 16,
+      paddingVertical: 4,
+      paddingHorizontal: 6,
+    },
+    titleLogo: {
+      width: isCompact ? 240 : 420,
+      height: isCompact ? 72 : 110,
     },
     mainRow: {
       flexDirection: isCompact ? "column" : "row",
