@@ -35,8 +35,7 @@ def signup():
     display_name = data.get("display_name", "")
 
     supabase = current_app.extensions.get("supabase_client")
-    if supabase is None:
-        return jsonify({"message": "Supabase client not initialized"}), 500
+
     try:
         response = supabase.auth.sign_up({"email": email, "password": password, "options": {"data": {"display_name": display_name}}})
     except:
