@@ -13,11 +13,12 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Link, Stack } from "expo-router";
-
+import { Link, Stack, useRouter } from "expo-router";
+ 
 import LineBackground from "../assets/images/group-R5.png";
 import LogoMark from "../assets/images/logo.svg";
 import LogoText from "../assets/images/logotext.svg";
+import { setLoggedIn } from "../lib/auth";
 
 const COLORS = {
   green: "#00DF56",
@@ -32,6 +33,7 @@ const COLORS = {
 };
 
 export default function SignupScreen() {
+  const router = useRouter();
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
 
@@ -70,14 +72,20 @@ export default function SignupScreen() {
       >
         <View style={styles.scrollContent}>
           <View style={styles.topBar}>
-            <Image source={LogoMark} style={styles.logoMark} contentFit="contain" />
-            <Image source={LogoText} style={styles.logoText} contentFit="contain" />
+            <Link href="/(tabs)" asChild>
+              <Pressable style={styles.brandRow} hitSlop={8}>
+                <Image source={LogoMark} style={styles.logoMark} contentFit="contain" />
+                <Image source={LogoText} style={styles.logoText} contentFit="contain" />
+              </Pressable>
+            </Link>
 
             <View style={styles.topActions}>
               <Pressable style={styles.iconButton}>
                 <Ionicons name="search-outline" size={20} color={COLORS.dark} />
               </Pressable>
-              <View style={styles.profileDot} />
+              <Link href="/(tabs)" asChild>
+                <Pressable style={styles.profileDot} hitSlop={8} />
+              </Link>
             </View>
           </View>
 
@@ -183,7 +191,13 @@ export default function SignupScreen() {
               <Text style={styles.optionText}>I accept privacy terms</Text>
             </Pressable>
 
-            <Pressable style={styles.primaryButton}>
+            <Pressable
+              style={styles.primaryButton}
+              onPress={async () => {
+                await setLoggedIn(true);
+                router.replace("/(tabs)");
+              }}
+            >
               <Text style={styles.primaryButtonText}>Sign Up</Text>
             </Pressable>
 
@@ -228,11 +242,18 @@ function createStyles(isCompact) {
       justifyContent: "space-between",
       marginBottom: isCompact ? 10 : 12,
     },
+    brandRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: isCompact ? 8 : 10,
+      flexShrink: 1,
+    },
     logoMark: {
       width: isCompact ? 44 : 56,
       height: isCompact ? 55 : 60,
     },
     logoText: {
+      marginLeft: 350,
       width: isCompact ? 310 : 430,
       height: isCompact ? 60 : 75,
     },

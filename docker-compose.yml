@@ -1,0 +1,18 @@
+services:
+  auth-service:
+    build: ./backend/user-service
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/user-service:/app
+
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1 # remove when debugging is over
+
+  
+
+
