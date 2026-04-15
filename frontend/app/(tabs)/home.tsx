@@ -16,6 +16,7 @@ import { Stack, usePathname, useRouter } from "expo-router";
 import { Image } from "expo-image";
 
 import LineBackground from "@/assets/images/group-R5.svg";
+import Map from "@/components/Map";
 
 
 const COLORS = {
@@ -223,11 +224,9 @@ export default function HomeConceptScreen() {
               </View>
             </View>
             <View style={styles.mapPlaceholder}>
-              <Ionicons name="map-outline" size={30} color={COLORS.mutedText} />
-              <Text style={styles.mapPlaceholderTitle}>Map preview placeholder</Text>
-              <Text style={styles.mapPlaceholderText}>
-                This area is ready to host your interactive map component.
-              </Text>
+              <View style={{ flex: 1, width: "100%" }}>
+                <Map />
+              </View>
             </View>
           </View>
 
@@ -489,13 +488,10 @@ function createStyles(isCompact: boolean) {
     mapPlaceholder: {
       height: isCompact ? 220 : 300,
       borderRadius: 22,
+      overflow: "hidden",          // ← clips map tiles to rounded corners
       borderWidth: 2,
       borderColor: "rgba(154,184,244,0.9)",
-      backgroundColor: "rgba(255,255,255,0.85)",
-      alignItems: "center",
-      justifyContent: "center",
-      paddingHorizontal: 18,
-      gap: 6,
+      // remove: alignItems, justifyContent, paddingHorizontal, gap, backgroundColor
     },
     mapPlaceholderTitle: {
       color: COLORS.primaryText,
