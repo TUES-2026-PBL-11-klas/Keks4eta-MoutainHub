@@ -5,7 +5,7 @@ auth_bp = Blueprint("auth", __name__)
 
 
 
-@auth_bp.route("/auth/login", methods=["POST"])
+@auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.json
     email = data.get("email")
@@ -27,7 +27,7 @@ def login():
     }), 200
 
      
-@auth_bp.route("/auth/signup", methods=["POST"])
+@auth_bp.route("/signup", methods=["POST"])
 def signup():
     data = request.json
     email = data.get("email")
@@ -48,7 +48,7 @@ def signup():
 
 
 # Logout endpoint - since Supabase doesn't have a server-side logout, we just return success and let the client delete tokens
-@auth_bp.route("/auth/logout", methods=["POST"])
+@auth_bp.route("/logout", methods=["POST"])
 @require_auth
 def logout():
     data = request.json
