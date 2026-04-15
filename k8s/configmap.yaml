@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mountainhub-config
+  namespace: mountainhub
+data:
+  ENV: "production"
+  BACKEND_PORT: "8080"
+  FRONTEND_PORT: "80"
+  CORS_ORIGIN: "https://mountainhub.example.com"
