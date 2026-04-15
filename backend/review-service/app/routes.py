@@ -1,22 +1,12 @@
 from flask import Blueprint, request, jsonify, current_app
 from .middleware import require_auth
+from pytimeparse import parse
+from datetime import datetime, timedelta, timezone
+
 
 review_bp = Blueprint("review", __name__)
 
-# create table public.reviews (
-#   id uuid not null default gen_random_uuid (),
-#   created_at timestamp with time zone not null default now(),
-#   user_id uuid null,
-#   trail_id uuid not null,
-#   name text not null,
-#   rating numeric not null,
-#   description text null,
-#   constraint reviews_pkey primary key (id),
-#   constraint reviews_trail_id_fkey foreign KEY (trail_id) references trails (id) on update CASCADE on delete CASCADE,
-#   constraint reviews_user_id_fkey foreign KEY (user_id) references auth.users (id) on update CASCADE on delete CASCADE
-# ) TABLESPACE pg_default;
-
-@review_bp.route("/reviews", methods=["POST"])
+@review_bp.route("/", methods=["POST"])
 @require_auth
 def add_review():
     supabase = current_app.extensions.get("supabase_client")
@@ -50,3 +40,35 @@ def add_review():
         return jsonify({"message": "Review couldn't be uploaded"}), 400
 
 
+@review_bp.route("/", methods=["GET"])
+def get_reviews():
+    supabase = current_app.extensions.get("supabase_client")
+    
+    since = request.args.get("since")
+    if since:
+        try:
+            seconds = parse(since)
+            since_time = datetime.utcnow() - timedelta(seconds=seconds)
+        except:
+            return jsonify({"message": "Invalid 'since' parameter format"}), 400
+    else:
+        since_time = datetime.utcnow()- timedelta(days=365)  # Default to last year
+
+    size = request.args.get("size", 10)
+
+    page = request.args.get("page", 1)
+    try :
+        size = int(size)
+        page = int(page)
+    except:
+        return jsonify({"message": "Invalid pagination parameters"}), 400   
+    offset_start = (page - 1) * size
+    offset_end = offset_start + size - 1
+
+    try:
+        response = supabase.table("reviews").select("*").gte("created_at",since_time).range(offset_start, offset_end).execute()
+        return jsonify({"reviews": response.data}), 200
+    except:
+        return jsonify({"message": "Couldn't fetch reviews"}), 400
+    
+    
