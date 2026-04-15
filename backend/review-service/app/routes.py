@@ -39,12 +39,9 @@ def add_review():
     except :
         return jsonify({"message": "Review couldn't be uploaded"}), 400
 
-
-@review_bp.route("/", methods=["GET"])
-def get_reviews():
+def calculate_range(since, size, page):
     supabase = current_app.extensions.get("supabase_client")
-    
-    since = request.args.get("since")
+
     if since:
         try:
             seconds = parse(since)
@@ -54,9 +51,6 @@ def get_reviews():
     else:
         since_time = datetime.utcnow()- timedelta(days=365)  # Default to last year
 
-    size = request.args.get("size", 10)
-
-    page = request.args.get("page", 1)
     try :
         size = int(size)
         page = int(page)
@@ -65,10 +59,37 @@ def get_reviews():
     offset_start = (page - 1) * size
     offset_end = offset_start + size - 1
 
+    return since_time, offset_start, offset_end
+
+
+@review_bp.route("/", methods=["GET"])
+def get_reviews():
+    
+    since = request.args.get("since")
+    size = request.args.get("size", 10)
+    page = request.args.get("page", 1)
+    since_time, offset_start, offset_end = calculate_range(since, size, page)
+
+    supabase = current_app.extensions.get("supabase_client")
+
     try:
         response = supabase.table("reviews").select("*").gte("created_at",since_time).range(offset_start, offset_end).execute()
         return jsonify({"reviews": response.data}), 200
     except:
         return jsonify({"message": "Couldn't fetch reviews"}), 400
     
-    
+
+@review_bp.route("/trail/<string:trail_id>", methods=["GET"])
+def get_reviews_by_trail(trail_id):
+    since = request.args.get("since")
+    size = request.args.get("size", 10)
+    page = request.args.get("page", 1)
+    since_time, offset_start, offset_end = calculate_range(since, size, page)
+
+    supabase = current_app.extensions.get("supabase_client")
+
+    try:
+        response = supabase.table("reviews").select("*").eq("trail_id", trail_id).gte("created_at",since_time).range(offset_start, offset_end).execute()
+        return jsonify({"reviews": response.data}), 200
+    except:
+        return jsonify({"message": "Couldn't fetch reviews"}), 400
