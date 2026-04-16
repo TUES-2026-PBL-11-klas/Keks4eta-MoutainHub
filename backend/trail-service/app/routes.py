@@ -8,15 +8,6 @@ trails_bp = Blueprint("trails", __name__)
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _serialize_trail(trail: dict) -> dict:
-    """
-    Supabase returns the route geometry as a GeoJSON dict already
-    when using the PostGIS integration. Convert any non-serializable
-    fields if needed.
-    """
-    return {k: v for k, v in trail.items()}
-
-
 def get_enum_values(enum_name: str):
     supabase = current_app.extensions.get("supabase_client")
     response = supabase.rpc("get_enum_values", {"enum_name": enum_name}).execute()
