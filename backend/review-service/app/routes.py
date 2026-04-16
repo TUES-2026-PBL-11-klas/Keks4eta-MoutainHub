@@ -93,3 +93,18 @@ def get_reviews_by_trail(trail_id):
         return jsonify({"reviews": response.data}), 200
     except:
         return jsonify({"message": "Couldn't fetch reviews"}), 400
+
+@review_bp.route("/user/<string:user_id>", methods=["GET"])
+def get_reviews_by_user(user_id):
+    since = request.args.get("since")
+    size = request.args.get("size", 10)
+    page = request.args.get("page", 1)
+    since_time, offset_start, offset_end = calculate_range(since, size, page)
+
+    supabase = current_app.extensions.get("supabase_client")
+
+    try:
+        response = supabase.table("reviews").select("*").eq("user_id", user_id).gte("created_at",since_time).range(offset_start, offset_end).execute()
+        return jsonify({"reviews": response.data}), 200
+    except:
+        return jsonify({"message": "Couldn't fetch reviews"}), 400
