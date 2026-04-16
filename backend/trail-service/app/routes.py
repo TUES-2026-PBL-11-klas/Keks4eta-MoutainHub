@@ -3,9 +3,6 @@ from .middleware import require_auth
 
 trails_bp = Blueprint("trails", __name__)
 
-VALID_CATEGORIES = {"mtb", "ski", "hiking", "all"}
-VALID_STATUSES = {"open", "partial", "closed"}
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -19,11 +16,17 @@ def _serialize_trail(trail: dict) -> dict:
     """
     return {k: v for k, v in trail.items()}
 
+
+def get_enum_values(enum_name: str):
+    supabase = current_app.extensions.get("supabase_client")
+    response = supabase.rpc("get_enum_values", {"enum_name": enum_name}).execute()
+    return {row["value"] for row in response.data}
+
 # ---------------------------------------------------------------------------
-# POST /api/trails  — create a new trail (auth required)
+# POST /  — create a new trail (auth required)
 # ---------------------------------------------------------------------------
 
-@trails_bp.route("/api/trails", methods=["POST"])
+@trails_bp.route("/", methods=["POST"])
 @require_auth
 def create_trail():
 
@@ -54,8 +57,15 @@ def create_trail():
     if missing:
         return jsonify({"error": f"Missing fields: {', '.join(missing)}"}), 400
 
-    if data["category"] not in VALID_CATEGORIES:
+
+    valid_categories = get_enum_values("category_enum")
+    valid_statuses = get_enum_values("status_enum")
+
+    if data["category"] not in valid_categories:
         return jsonify({"error": f"Invalid category: {data['category']}"}), 400
+
+    if "status" in data and data["status"] not in valid_statuses:
+        return jsonify({"error": f"Invalid status: {data['status']}"}), 400
 
     try:
         payload = {
@@ -67,7 +77,7 @@ def create_trail():
             "distance_km": data.get("distance_km"),
             "elevation_gain_m": data.get("elevation_gain_m"),
             "status": data.get("status", "open"),
-            "route": data["route"],  # GeoJSON LineString dict
+            "route": data["route"],
         }
 
         response = supabase.table("trails").insert(payload).execute()
@@ -82,13 +92,13 @@ def create_trail():
 
 
 # ---------------------------------------------------------------------------
-# GET /api/trails  — list all trails 
+# GET /  — list all trails
 #    Optional query params:
 #      ?category=mtb
 #      ?status=open
 # ---------------------------------------------------------------------------
 
-@trails_bp.route("/api/trails", methods=["GET"])
+@trails_bp.route("/", methods=["GET"])
 def list_trails():
     supabase = current_app.extensions.get("supabase_client")
 
@@ -98,13 +108,16 @@ def list_trails():
             "description, distance_km, elevation_gain_m, status, route"
         )
 
+        valid_categories = get_enum_values("category_enum")
+        valid_statuses = get_enum_values("status_enum")
+
         if category := request.args.get("category"):
-            if category not in VALID_CATEGORIES:
+            if category not in valid_categories:
                 return jsonify({"error": f"Invalid category: {category}"}), 400
             query = query.eq("category", category)
 
         if status := request.args.get("status"):
-            if status not in VALID_STATUSES:
+            if status not in valid_statuses:
                 return jsonify({"error": f"Invalid status: {status}"}), 400
             query = query.eq("status", status)
 
@@ -116,10 +129,10 @@ def list_trails():
 
 
 # ---------------------------------------------------------------------------
-# GET /api/trails/<trail_id>  — single trail by PK
+# GET /<trail_id>  — single trail by PK
 # ---------------------------------------------------------------------------
 
-@trails_bp.route("/api/trails/<trail_id>", methods=["GET"])
+@trails_bp.route("/<trail_id>", methods=["GET"])
 def get_trail(trail_id):
     supabase = current_app.extensions.get("supabase_client")
 
@@ -145,13 +158,13 @@ def get_trail(trail_id):
 
 
 # ---------------------------------------------------------------------------
-# GET /api/trails/user/<user_id>  — all trails for a user
+# GET /user/<user_id>  — all trails for a user
 #    Optional query params:
 #      ?category=mtb
 #      ?status=open
 # ---------------------------------------------------------------------------
 
-@trails_bp.route("/api/trails/user/<user_id>", methods=["GET"])
+@trails_bp.route("/user/<user_id>", methods=["GET"])
 def get_trails_by_user(user_id):
     supabase = current_app.extensions.get("supabase_client")
 
@@ -165,20 +178,21 @@ def get_trails_by_user(user_id):
             .eq("user_id", user_id)
         )
 
+        valid_categories = get_enum_values("category_enum")
+        valid_statuses = get_enum_values("status_enum")
+
         if category := request.args.get("category"):
-            if category not in VALID_CATEGORIES:
+            if category not in valid_categories:
                 return jsonify({"error": f"Invalid category: {category}"}), 400
             query = query.eq("category", category)
 
         if status := request.args.get("status"):
-            if status not in VALID_STATUSES:
+            if status not in valid_statuses:
                 return jsonify({"error": f"Invalid status: {status}"}), 400
             query = query.eq("status", status)
-
 
         response = query.order("created_at", desc=True).execute()
         return jsonify(response.data), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
