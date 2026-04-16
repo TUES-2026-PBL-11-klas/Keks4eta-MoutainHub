@@ -33,7 +33,7 @@ jobs:
       - name: Build web bundle
         run: npx expo export --platform web
 
-    test-services:
+  test-services:
     runs-on: ubuntu-latest
 
     strategy:
