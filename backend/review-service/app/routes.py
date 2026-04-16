@@ -49,7 +49,7 @@ def calculate_range(since, size, page):
         except:
             return jsonify({"message": "Invalid 'since' parameter format"}), 400
     else:
-        since_time = datetime.utcnow()- timedelta(days=365)  # Default to last year
+        since_time = datetime.utcnow() - timedelta(days=365)  # Default to last year
 
     try :
         size = int(size)
