@@ -49,15 +49,15 @@ export default function MapLeaflet() {
   const [trails, setTrails] = useState<Trail[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch(`${API_BASE}/api/trails`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then(setTrails)
-      .catch((e) => setError(e.message));
-  }, []);
+//  useEffect(() => {
+//    fetch(`${API_BASE}/api/trails`)
+//      .then((r) => {
+//        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+//        return r.json();
+//      })
+//      .then(setTrails)
+//      .catch((e) => setError(e.message));
+//  }, []);
 
   return (
     <MapContainer
