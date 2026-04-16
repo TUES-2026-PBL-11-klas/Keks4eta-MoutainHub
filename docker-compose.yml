@@ -1,32 +1,52 @@
 services:
+  api-gateway:
+    build: ./backend/api-gateway-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - review-service
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - REVIEW_SERVICE_URL=${REVIEW_SERVICE_URL}
+      - MEDIA_SERVICE_URL=${MEDIA_SERVICE_URL}
+      - TRAIL_SERVICE_URL=${TRAIL_SERVICE_URL}
+
   auth-service:
     build: ./backend/user-service
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     volumes:
       - ./backend/user-service:/app
-
     environment:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
-      
       - FLASK_ENV=development
-      - FLASK_DEBUG=1 # remove when debugging is over
+      - FLASK_DEBUG=1
 
   review-service:
     build: ./backend/review-service
-    ports:
-      - "5001:5000"
+    expose:
+      - "5000"
     volumes:
       - ./backend/review-service:/app
-      
     environment:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
-
       - FLASK_ENV=development
-      - FLASK_DEBUG=1 # remove when debugging is over
+      - FLASK_DEBUG=1
 
-  
-
-
+  trail-service:
+    build: ./backend/trail-service
+    expose:
+      - "5000"
+    volumes:
+      - ./backend/trail-service:/app
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
