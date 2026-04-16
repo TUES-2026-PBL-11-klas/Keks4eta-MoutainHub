@@ -33,29 +33,48 @@ jobs:
       - name: Build web bundle
         run: npx expo export --platform web
 
-  backend:
-    name: Backend lint and smoke test
+    test-services:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service:
+          - user-service
+          - trail-service
+          - review-service
+          - media-service
+          - api-gateway-service
+
     defaults:
       run:
-        working-directory: backend
+        working-directory: backend/${{ matrix.service }}
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt ruff
-
-      - name: Ruff check
-        run: ruff check .
-
-      - name: Start backend and probe health endpoint
         run: |
-          python app.py &
-          sleep 3
-          curl --fail http://127.0.0.1:8080/health
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install flake8
+
+      - name: Run lint (flake8)
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Start service (smoke test)
+        run: |
+          python run.py &
+          sleep 5
+
+      - name: Health check
+        run: |
+          curl --fail http://127.0.0.1:5000/health
+
