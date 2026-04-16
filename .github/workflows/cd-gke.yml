@@ -1,0 +1,99 @@
+name: CD to GKE
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  NAMESPACE: mountainhub
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Auth to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.GCP_ARTIFACT_REGISTRY_HOST }} --quiet
+
+      - name: Build and push backend image
+        env:
+          REGISTRY_HOST: ${{ secrets.GCP_ARTIFACT_REGISTRY_HOST }}
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          REPOSITORY: ${{ secrets.GCP_ARTIFACT_REPOSITORY }}
+        run: |
+          BACKEND_IMAGE="$REGISTRY_HOST/$PROJECT_ID/$REPOSITORY/backend:${GITHUB_SHA}"
+          docker build -t "$BACKEND_IMAGE" ./backend
+          docker push "$BACKEND_IMAGE"
+          echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> $GITHUB_ENV
+
+      - name: Build and push frontend image
+        env:
+          REGISTRY_HOST: ${{ secrets.GCP_ARTIFACT_REGISTRY_HOST }}
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          REPOSITORY: ${{ secrets.GCP_ARTIFACT_REPOSITORY }}
+        run: |
+          FRONTEND_IMAGE="$REGISTRY_HOST/$PROJECT_ID/$REPOSITORY/frontend:${GITHUB_SHA}"
+          docker build -t "$FRONTEND_IMAGE" ./frontend
+          docker push "$FRONTEND_IMAGE"
+          echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> $GITHUB_ENV
+
+      - name: Fetch GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
+          location: ${{ secrets.GKE_CLUSTER_LOCATION }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Apply namespace and base config
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/configmap.yaml
+
+      - name: Create or update app secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_BUCKET_GPX: ${{ secrets.SUPABASE_BUCKET_GPX }}
+          SUPABASE_BUCKET_MEDIA: ${{ secrets.SUPABASE_BUCKET_MEDIA }}
+        run: |
+          kubectl create secret generic mountainhub-secrets \
+            --namespace "$NAMESPACE" \
+            --from-literal=SUPABASE_URL="$SUPABASE_URL" \
+            --from-literal=SUPABASE_KEY="$SUPABASE_KEY" \
+            --from-literal=SUPABASE_BUCKET_GPX="$SUPABASE_BUCKET_GPX" \
+            --from-literal=SUPABASE_BUCKET_MEDIA="$SUPABASE_BUCKET_MEDIA" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Render deployment manifests with image tags
+        run: |
+          sed "s|BACKEND_IMAGE_PLACEHOLDER|$BACKEND_IMAGE|g" k8s/backend/deployment.yaml > k8s/backend/deployment.rendered.yaml
+          sed "s|FRONTEND_IMAGE_PLACEHOLDER|$FRONTEND_IMAGE|g" k8s/frontend/deployment.yaml > k8s/frontend/deployment.rendered.yaml
+
+      - name: Deploy workloads and services
+        run: |
+          kubectl apply -f k8s/backend/deployment.rendered.yaml
+          kubectl apply -f k8s/backend/service.yaml
+          kubectl apply -f k8s/frontend/deployment.rendered.yaml
+          kubectl apply -f k8s/frontend/service.yaml
+          kubectl apply -f k8s/ingress.yaml
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/backend -n "$NAMESPACE"
+          kubectl rollout status deployment/frontend -n "$NAMESPACE"

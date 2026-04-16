@@ -13,6 +13,20 @@ services:
       - FLASK_ENV=development
       - FLASK_DEBUG=1 # remove when debugging is over
 
+  review-service:
+    build: ./backend/review-service
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./backend/review-service:/app
+      
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1 # remove when debugging is over
+
   
 
 
