@@ -76,8 +76,6 @@ jobs:
       - name: Start service (smoke test)
 
         run: |
-          echo "URL is set? ${SUPABASE_URL:+yes}"
-          echo "KEY is set? ${SUPABASE_KEY:+yes}"
           python run.py &
           sleep 5
 
