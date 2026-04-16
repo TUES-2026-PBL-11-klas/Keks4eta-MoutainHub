@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from .middleware import require_auth
 from pytimeparse import parse
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 
 review_bp = Blueprint("review", __name__)
