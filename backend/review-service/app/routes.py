@@ -10,6 +10,16 @@ review_bp = Blueprint("review", __name__)
 def health():
     return {"status": "alive"}, 200
 
+@review_bp.route("/ready", methods=["GET"])
+def ready():
+    # Check if we can connect to the database
+    supabase = current_app.extensions.get("supabase_client")
+    try:
+        supabase.table("reviews").select("*").limit(1).execute()
+        return {"status": "ready"}, 200
+    except:
+        return {"status": "not ready"}, 503
+
 @review_bp.route("/", methods=["POST"])
 @require_auth
 def add_review():

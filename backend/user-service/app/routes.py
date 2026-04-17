@@ -7,6 +7,16 @@ auth_bp = Blueprint("auth", __name__)
 def health():
     return {"status": "alive"}, 200
 
+@auth_bp.route("/ready", methods=["GET"])
+def ready():
+    # Check if we can connect to the database
+    supabase = current_app.extensions.get("supabase_client")
+    try:
+        supabase.table("users").select("*").limit(1).execute()
+        return {"status": "ready"}, 200
+    except:
+        return {"status": "not ready"}, 503
+
 @auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.json
