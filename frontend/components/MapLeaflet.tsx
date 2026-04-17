@@ -1,9 +1,9 @@
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+import React, { useEffect, useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
+import { useTrails } from "@/hooks/api";
 
-// Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -24,45 +24,35 @@ const STATUS_OPACITY: Record<string, number> = {
   closed: 0.3,
 };
 
-const API_BASE = process.env.EXPO_PUBLIC_TRAIL_SERVICE_URL ?? "http://localhost:5002";
+const BULGARIA_CENTER: [number, number] = [42.7339, 25.4858];
+const BULGARIA_ZOOM = 7;
+const USER_ZOOM     = 11;
 
-type LatLng = [number, number];
-
-interface Trail {
-  id: string;
-  name: string;
-  category: string;
-  difficulty: number;
-  status: string;
-  distance_km: number;
-  elevation_gain_m: number;
-  route: {
-    type: string;
-    // GeoJSON coords are [lng, lat, alt?] — we flip to [lat, lng] for Leaflet
-    coordinates: [number, number, number?][];
-  };
+function LocationFlyTo({ coords }: { coords: [number, number] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (coords) map.flyTo(coords, USER_ZOOM, { duration: 1.5 });
+  }, [coords]);
+  return null;
 }
 
-const CENTER: LatLng = [42.6977, 23.3219];
+export default function MapLeaflet({ category }: { category?: string }) {
+  const { trails: allTrails, loading, error } = useTrails();
+  const trails = category ? allTrails.filter((t) => t.category === category) : allTrails;
+  const [userCoords, setUserCoords] = useState<[number, number] | null>(null);
 
-export default function MapLeaflet() {
-  const [trails, setTrails] = useState<Trail[]>([]);
-  const [error, setError] = useState<string | null>(null);
-
-//  useEffect(() => {
-//    fetch(`${API_BASE}/api/trails`)
-//      .then((r) => {
-//        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-//        return r.json();
-//      })
-//      .then(setTrails)
-//      .catch((e) => setError(e.message));
-//  }, []);
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setUserCoords([pos.coords.latitude, pos.coords.longitude]),
+      () => {}
+    );
+  }, []);
 
   return (
     <MapContainer
-      center={CENTER}
-      zoom={11}
+      center={BULGARIA_CENTER}
+      zoom={BULGARIA_ZOOM}
       style={{ height: "100%", width: "100%" }}
     >
       <TileLayer
@@ -70,9 +60,17 @@ export default function MapLeaflet() {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       />
 
+      <LocationFlyTo coords={userCoords} />
+
+      {userCoords && (
+        <Marker position={userCoords}>
+          <Popup>You are here</Popup>
+        </Marker>
+      )}
+
       {trails.map((trail) => {
-        // GeoJSON is [lng, lat, alt?] — Leaflet wants [lat, lng]
-        const positions: LatLng[] = trail.route.coordinates.map(
+        if (!trail.route?.coordinates?.length) return null;
+        const positions: [number, number][] = trail.route.coordinates.map(
           ([lng, lat]) => [lat, lng]
         );
         const color = TRAIL_COLORS[trail.category] ?? "#416AA6";
@@ -80,14 +78,8 @@ export default function MapLeaflet() {
         const start = positions[0];
 
         return (
-          <div key={trail.id}>
-            {/* Polyline for the full path */}
-            <Polyline
-              positions={positions}
-              pathOptions={{ color, opacity, weight: 4 }}
-            />
-
-            {/* Marker at the trailhead */}
+          <React.Fragment key={trail.id}>
+            <Polyline positions={positions} pathOptions={{ color, opacity, weight: 4 }} />
             {start && (
               <Marker position={start}>
                 <Popup>
@@ -101,25 +93,29 @@ export default function MapLeaflet() {
                 </Popup>
               </Marker>
             )}
-          </div>
+          </React.Fragment>
         );
       })}
 
+      {loading && (
+        <div style={{
+          position: "absolute", top: 8, left: 8, zIndex: 1000,
+          background: "rgba(255,255,255,0.9)",
+          padding: "4px 10px", borderRadius: 6,
+          fontSize: 12, color: "#416AA6",
+        }}>
+          Loading trails...
+        </div>
+      )}
+
       {error && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: 8,
-            left: 8,
-            background: "rgba(255,255,255,0.9)",
-            padding: "4px 8px",
-            borderRadius: 6,
-            fontSize: 12,
-            color: "#c0392b",
-            zIndex: 1000,
-          }}
-        >
-          Trail load error: {error}
+        <div style={{
+          position: "absolute", bottom: 8, left: 8, zIndex: 1000,
+          background: "rgba(255,255,255,0.9)",
+          padding: "4px 10px", borderRadius: 6,
+          fontSize: 12, color: "#c0392b",
+        }}>
+          {error}
         </div>
       )}
     </MapContainer>
