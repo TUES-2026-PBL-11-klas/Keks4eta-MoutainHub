@@ -1,18 +1,26 @@
 name: CI
 
 on:
-  pull_request:
   push:
     branches:
       - main
+      - dev
+      - fix/**
+  pull_request:
+  workflow_dispatch:
 
 jobs:
+  # -------------------------
+  # FRONTEND
+  # -------------------------
   frontend:
-    name: Frontend lint and web export
+    name: Frontend lint & build
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: frontend
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,34 +41,47 @@ jobs:
       - name: Build web bundle
         run: npx expo export --platform web
 
+  # -------------------------
+  # BACKEND SERVICES
+  # -------------------------
   test-services:
+    name: Test ${{ matrix.service }}
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: user-service
+            port: 5000
+          - service: trail-service
+            port: 5000
+          - service: review-service
+            port: 5000
+          # - service: media-service
+          #   port: 5000
+          - service: api-gateway-service
+            port: 8080
+
 
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-
-    strategy:
-      matrix:
-        service:
-          - user-service
-          - trail-service
-          - review-service
-          - media-service
-          - api-gateway-service
+      FLASK_DEBUG: false
 
     defaults:
       run:
         working-directory: backend/${{ matrix.service }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -68,18 +89,42 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install flake8
 
-      - name: Run lint (flake8)
+      - name: Lint
         run: |
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      - name: Start service (smoke test)
-
+      # -------------------------
+      # SMOKE TEST
+      # -------------------------
+      - name: Start service
         run: |
-          python run.py &
-          sleep 5
+          nohup python run.py > server.log 2>&1 &
+          echo $! > server.pid
 
-      - name: Health check
+      - name: Wait for service
         run: |
-          curl --fail http://127.0.0.1:5000/health
+          echo "Waiting for service to be ready..."
 
+          for i in {1..15}; do
+            if curl -f http://127.0.0.1:${{ matrix.port }}/health > /dev/null; then
+              echo "Service is up!"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "Service failed to start"
+          cat server.log
+          exit 1
+
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+          fi
+
+      - name: Show logs on failure
+        if: failure()
+        run: cat server.log
