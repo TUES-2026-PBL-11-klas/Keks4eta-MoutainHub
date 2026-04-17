@@ -1,6 +1,6 @@
-from flask import app, request, Response
+from flask import request, Response
 import requests
-
+from . import app
 
 def forward_request(base_url, path):
     query_string = request.query_string.decode()
