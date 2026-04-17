@@ -1,7 +1,6 @@
 from flask import request, Response
 import requests
 
-
 def forward_request(base_url, path):
     query_string = request.query_string.decode()
     url = f"{base_url}/{path}"
@@ -40,7 +39,13 @@ def forward_request(base_url, path):
     )
 
 
+
 def register_routes(app):
+
+    @app.route("/health", methods=["GET"])
+    def health():
+        return {"status": "ok"}, 200
+
 
     @app.route("/auth", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
     @app.route("/auth/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])

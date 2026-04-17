@@ -3,6 +3,23 @@ from .middleware import require_auth
 
 trails_bp = Blueprint("trails", __name__)
 
+# ---------------------------------------------------------------------------
+# Health and Readiness Endpoints
+# ---------------------------------------------------------------------------
+
+@trails_bp.route("/health", methods=["GET"])
+def health():
+    return {"status": "alive"}, 200
+
+@trails_bp.route("/ready", methods=["GET"])
+def ready():
+    # Check if we can connect to the database
+    supabase = current_app.extensions.get("supabase_client")
+    try:
+        supabase.table("trails").select("*").limit(1).execute()
+        return {"status": "ready"}, 200
+    except:
+        return {"status": "not ready"}, 503
 
 # ---------------------------------------------------------------------------
 # Helpers
