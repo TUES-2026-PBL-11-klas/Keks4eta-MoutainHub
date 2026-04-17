@@ -3,7 +3,9 @@ from .middleware import require_auth
 
 auth_bp = Blueprint("auth", __name__)
 
-
+@auth_bp.route("/health", methods=["GET"])
+def health():
+    return {"status": "alive"}, 200
 
 @auth_bp.route("/login", methods=["POST"])
 def login():

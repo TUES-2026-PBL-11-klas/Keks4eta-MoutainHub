@@ -6,6 +6,10 @@ from datetime import datetime, timedelta
 
 review_bp = Blueprint("review", __name__)
 
+@review_bp.route("/health", methods=["GET"])
+def health():
+    return {"status": "alive"}, 200
+
 @review_bp.route("/", methods=["POST"])
 @require_auth
 def add_review():

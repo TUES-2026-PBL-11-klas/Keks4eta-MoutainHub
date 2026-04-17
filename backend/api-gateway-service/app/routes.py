@@ -1,4 +1,4 @@
-from flask import request, Response
+from flask import app, request, Response
 import requests
 
 
@@ -39,6 +39,10 @@ def forward_request(base_url, path):
         response_headers
     )
 
+
+@app.route("/health", methods=["GET"])
+def health():
+    return {"status": "ok"}, 200
 
 def register_routes(app):
 

@@ -3,6 +3,15 @@ from .middleware import require_auth
 
 trails_bp = Blueprint("trails", __name__)
 
+# ---------------------------------------------------------------------------
+# Health Check
+# ---------------------------------------------------------------------------
+
+@trails_bp.route("/health", methods=["GET"])
+def health():
+    return {"status": "alive"}, 200
+
+
 
 # ---------------------------------------------------------------------------
 # Helpers
