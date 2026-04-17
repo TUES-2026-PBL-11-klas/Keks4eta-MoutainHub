@@ -17,7 +17,7 @@ import { Image } from "expo-image";
 
 import LineBackground from "@/assets/images/group-R5.svg";
 import Map from "@/components/Map";
-
+import { useReviews } from "@/hooks/api";
 
 const COLORS = {
   green: "#00DF56",
@@ -51,29 +51,13 @@ export default function HomeConceptScreen() {
 
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
 
-  const activity = useMemo(
-    () => [
-      {
-        id: "1",
-        name: "Ivan Ivanov",
-        title: "visited Rila Mountain",
-        body: "Lorem ipsum dolor sit amet. In facilis veritat",
-      },
-      {
-        id: "2",
-        name: "Maria Petrova",
-        title: "completed MTB Trail",
-        body: "Beautiful day and great views along the ridge.",
-      },
-      {
-        id: "3",
-        name: "Georgi Georgiev",
-        title: "saved a Walk Trail",
-        body: "Perfect for beginners; very chill route.",
-      },
-    ],
-    []
-  );
+  const { reviews } = useReviews({ size: 3 });
+  const activity = reviews.map((r) => ({
+    id: r.id,
+    name: r.name,
+    title: `rated a trail ${r.rating}/5`,
+    body: r.description ?? "",
+  }));
 
   const filteredActivity = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
