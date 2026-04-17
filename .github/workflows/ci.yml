@@ -51,17 +51,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service:
-          - user-service
-          - trail-service
-          - review-service
-          - media-service
-          - api-gateway-service
+        include:
+          - service: user-service
+            port: 5000
+          - service: trail-service
+            port: 5000
+          - service: review-service
+            port: 5000
+          - service: media-service
+            port: 5000
+          - service: api-gateway-service
+            port: 8080
+
 
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-      FLASK_DEBUG: false   # 🔥 ensures no reloader issues
+      FLASK_DEBUG: false
 
     defaults:
       run:
