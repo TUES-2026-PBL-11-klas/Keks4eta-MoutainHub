@@ -107,7 +107,7 @@ jobs:
           echo "Waiting for service to be ready..."
 
           for i in {1..15}; do
-            if curl -s http://127.0.0.1:${{ matrix.port }}/health > /dev/null; then
+            if curl -f http://127.0.0.1:${{ matrix.port }}/health > /dev/null; then
               echo "Service is up!"
               exit 0
             fi
