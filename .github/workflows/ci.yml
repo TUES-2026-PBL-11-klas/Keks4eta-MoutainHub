@@ -58,8 +58,8 @@ jobs:
             port: 5000
           - service: review-service
             port: 5000
-          - service: media-service
-            port: 5000
+          # - service: media-service
+          #   port: 5000
           - service: api-gateway-service
             port: 8080
 
