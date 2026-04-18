@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 from .middleware import require_auth
 from pytimeparse import parse
 from datetime import datetime, timedelta
+import requests
 
 
 review_bp = Blueprint("review", __name__)
@@ -119,6 +120,45 @@ def get_reviews_by_user(user_id):
 
     try:
         response = supabase.table("reviews").select("*").eq("user_id", user_id).gte("created_at",since_time).range(offset_start, offset_end).execute()
+        return jsonify({"reviews": response.data}), 200
+    except:
+        return jsonify({"message": "Couldn't fetch reviews"}), 400
+
+
+@review_bp.route("/category/<string:category>", methods=["GET"])
+def get_reviews_by_category(category):
+    gateway_url = current_app.config.get("API_GATEWAY_URL")
+    if not gateway_url:
+        return jsonify({"message": "API gateway URL not configured"}), 500
+
+    try:
+        trail_response = requests.get(f"{gateway_url}/trails", params={"category": category}, timeout=5)
+        if trail_response.status_code != 200:
+            return jsonify(trail_response.json()), trail_response.status_code
+        trails = trail_response.json()
+    except requests.RequestException:
+        return jsonify({"message": "Could not reach trail service"}), 502
+
+    trail_ids = [t["id"] for t in trails]
+    if not trail_ids:
+        return jsonify({"reviews": []}), 200
+
+    since = request.args.get("since")
+    size = request.args.get("size", 10)
+    page = request.args.get("page", 1)
+    since_time, offset_start, offset_end = calculate_range(since, size, page)
+
+    supabase = current_app.extensions.get("supabase_client")
+
+    try:
+        response = (
+            supabase.table("reviews")
+            .select("*")
+            .in_("trail_id", trail_ids)
+            .gte("created_at", since_time)
+            .range(offset_start, offset_end)
+            .execute()
+        )
         return jsonify({"reviews": response.data}), 200
     except:
         return jsonify({"message": "Couldn't fetch reviews"}), 400

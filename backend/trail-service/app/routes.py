@@ -116,23 +116,18 @@ def list_trails():
             "description, distance_km, elevation_gain_m, status, route"
         )
 
-        valid_categories = get_enum_values("category_enum")
-        valid_statuses = get_enum_values("status_enum")
-
         if category := request.args.get("category"):
-            if category not in valid_categories:
-                return jsonify({"error": f"Invalid category: {category}"}), 400
             query = query.eq("category", category)
 
         if status := request.args.get("status"):
-            if status not in valid_statuses:
-                return jsonify({"error": f"Invalid status: {status}"}), 400
             query = query.eq("status", status)
 
         response = query.order("created_at", desc=True).execute()
         return jsonify(response.data), 200
 
     except Exception as e:
+        if "invalid input value for enum" in str(e).lower():
+            return jsonify({"error": "Invalid filter value"}), 400
         return jsonify({"error": str(e)}), 500
 
 

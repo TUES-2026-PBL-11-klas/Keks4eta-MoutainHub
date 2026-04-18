@@ -11,3 +11,6 @@ class Config:
     # Database
     SUPABASE_URL = os.getenv("SUPABASE_URL")
     SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+    # Internal services
+    API_GATEWAY_URL = os.getenv("API_GATEWAY_URL")
