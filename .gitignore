@@ -36,3 +36,4 @@ Thumbs.db
 # Terraform / K8s local
 *.tfstate
 *.tfstate.*
+secret.yaml

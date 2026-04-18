@@ -4,7 +4,16 @@ metadata:
   name: mountainhub-config
   namespace: mountainhub
 data:
-  ENV: "production"
-  BACKEND_PORT: "8080"
+  FLASK_ENV: "production"
+  FLASK_DEBUG: "0"
+  LOG_LEVEL: "INFO"
+  # Update CORS_ORIGIN if you add an ingress hostname
+  CORS_ORIGIN: "http://localhost"
+  PORT: "5000"
+  API_GATEWAY_PORT: "8080"
   FRONTEND_PORT: "80"
-  CORS_ORIGIN: "https://mountainhub.example.com"
+  # Kubernetes DNS-based service URLs (within same namespace)
+  AUTH_SERVICE_URL: "http://auth-service:5000"
+  REVIEW_SERVICE_URL: "http://review-service:5000"
+  TRAIL_SERVICE_URL: "http://trail-service:5000"
+  MEDIA_SERVICE_URL: "http://media-service:5000"
