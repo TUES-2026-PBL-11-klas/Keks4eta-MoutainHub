@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: trail-service
+  namespace: mountainhub
+  labels:
+    app: trail-service
+spec:
+  selector:
+    app: trail-service
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
