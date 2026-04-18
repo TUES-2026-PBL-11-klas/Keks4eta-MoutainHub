@@ -73,3 +73,25 @@ def logout():
     except:
         return jsonify({"message": "Logout failed"}), 400
     return jsonify({"message": "Logout successful"}), 200
+
+@auth_bp.route("/user/<string:user_id>", methods=["GET"])
+def get_user(user_id):
+    supabase = current_app.extensions.get("supabase_client")
+
+    try:
+        response = supabase.auth.admin.get_user_by_id(user_id)
+
+        if not response or not response.user:
+            return jsonify({"error": "User not found"}), 404
+
+        user_data = response.user
+
+        return jsonify({
+            "user_id": user_data.id,
+            "email": user_data.email,
+            "display_name": user_data.user_metadata.get("display_name", "")
+        }), 200
+
+    except Exception as e:
+        return jsonify({"message": "Internal Server Error"}), 500
+
