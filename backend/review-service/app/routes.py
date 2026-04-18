@@ -127,12 +127,12 @@ def get_reviews_by_user(user_id):
 
 @review_bp.route("/category/<string:category>", methods=["GET"])
 def get_reviews_by_category(category):
-    gateway_url = current_app.config.get("API_GATEWAY_URL")
-    if not gateway_url:
-        return jsonify({"message": "API gateway URL not configured"}), 500
+    trail_url = current_app.config.get("TRAIL_SERVICE_URL")
+    if not trail_url:
+        return jsonify({"message": "Trail service URL not configured"}), 500
 
     try:
-        trail_response = requests.get(f"{gateway_url}/trails", params={"category": category}, timeout=5)
+        trail_response = requests.get(f"{trail_url}", params={"category": category}, timeout=5)
         if trail_response.status_code != 200:
             return jsonify(trail_response.json()), trail_response.status_code
         trails = trail_response.json()

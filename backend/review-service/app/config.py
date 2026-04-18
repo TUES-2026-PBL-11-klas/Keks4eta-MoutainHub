@@ -13,4 +13,4 @@ class Config:
     SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
     # Internal services
-    API_GATEWAY_URL = os.getenv("API_GATEWAY_URL")
+    TRAIL_SERVICE_URL = os.getenv("TRAIL_SERVICE_URL")

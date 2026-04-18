@@ -26,7 +26,6 @@ services:
       - SUPABASE_KEY=${SUPABASE_KEY}
       - FLASK_ENV=development
       - FLASK_DEBUG=1
-      - API_GATEWAY_URL=${API_GATEWAY_URL}
 
   review-service:
     build: ./backend/review-service
@@ -39,7 +38,7 @@ services:
       - SUPABASE_KEY=${SUPABASE_KEY}
       - FLASK_ENV=development
       - FLASK_DEBUG=1
-      - API_GATEWAY_URL=${API_GATEWAY_URL}
+      - TRAIL_SERVICE_URL=${TRAIL_SERVICE_URL}
 
   trail-service:
     build: ./backend/trail-service
@@ -52,4 +51,3 @@ services:
       - SUPABASE_KEY=${SUPABASE_KEY}
       - FLASK_ENV=development
       - FLASK_DEBUG=1
-      - API_GATEWAY_URL=${API_GATEWAY_URL}
