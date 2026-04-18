@@ -16,6 +16,8 @@ import { Image } from "expo-image";
 
 import LineBackground from "@/assets/images/group-R5.svg";
 import { PostDetailsModal, type FeedPost } from "@/components/post-details-modal";
+import { useTrails, useCategoryReviews } from "@/hooks/api";
+import Map from "@/components/Map";
 
 const COLORS = {
   green: "#00DF56",
@@ -38,30 +40,6 @@ const MODE_CONFIG: Record<Mode, { label: string; color: string; route: "/walk" |
     mtb: { label: "MTB Trail", color: COLORS.brown, route: "/mtb" },
   };
 
-const POSTS: FeedPost[] = [
-  {
-    id: "w1",
-    userId: "u1",
-    user: "Ivan Ivanov",
-    title: "completed a trail",
-    subtitle: "Vitosha • 9.8 km • Easy",
-    photos: [require("@/assets/images/image mountain horizontal.jpg"), require("@/assets/images/image.png")],
-  },
-  {
-    id: "w2",
-    userId: "u2",
-    user: "Maria Petrova",
-    title: "added a new trail",
-    subtitle: "Rila • 12.1 km • Medium",
-    photos: [require("@/assets/images/image.png")],
-  },
-];
-
-const MAP_ACTIVITY = [
-  { id: "m1", title: "New hiking trail published", place: "Rhodope Mountains (BG)" },
-  { id: "m2", title: "Trail updated (route fixed)", place: "Vitosha (BG)" },
-  { id: "m3", title: "New starting point added", place: "Rila (BG)" },
-];
 
 export default function WalkHome() {
   const router = useRouter();
@@ -72,6 +50,24 @@ export default function WalkHome() {
   const [postOpen, setPostOpen] = useState(false);
 
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
+
+  const { trails } = useTrails({ category: "hiking" });
+  const { reviews } = useCategoryReviews("hiking", { size: 10 });
+
+  const posts: FeedPost[] = reviews.map((r) => ({
+    id: r.id,
+    userId: r.user_id ?? "",
+    user: r.name,
+    title: `rated ${r.rating}/5 ⭐`,
+    subtitle: r.description ?? "",
+    photos: [],
+  }));
+
+  const mapActivity = trails.map((t) => ({
+    id: t.id,
+    title: t.name,
+    place: `${t.distance_km} km · ${t.status}`,
+  }));
 
   return (
     <View style={styles.screen}>
@@ -141,7 +137,7 @@ export default function WalkHome() {
               <Text style={styles.sectionSubTitle}>Completed trails and new trails with photos.</Text>
 
               <View style={styles.postList}>
-                {POSTS.map((p) => (
+                {posts.map((p) => (
                   <Pressable
                     key={p.id}
                     style={styles.postCard}
@@ -175,7 +171,7 @@ export default function WalkHome() {
               <Text style={styles.sectionSubTitle}>New trails and updates around the country.</Text>
 
               <View style={styles.activityList}>
-                {MAP_ACTIVITY.map((a) => (
+                {mapActivity.map((a) => (
                   <View key={a.id} style={styles.activityItem}>
                     <Ionicons name="location-outline" size={16} color={COLORS.primaryText} />
                     <View style={{ flex: 1 }}>
@@ -187,9 +183,7 @@ export default function WalkHome() {
               </View>
 
               <View style={styles.mapPlaceholder}>
-                <Ionicons name="map-outline" size={30} color={COLORS.mutedText} />
-                <Text style={styles.mapPlaceholderTitle}>Map preview placeholder</Text>
-                <Text style={styles.mapPlaceholderText}>This will show the Bulgaria map activity layer.</Text>
+                <Map category="hiking" />
               </View>
             </View>
           </View>
@@ -319,9 +313,7 @@ function createStyles(isCompact: boolean) {
     activityItem: { flexDirection: "row", gap: 10, alignItems: "flex-start", padding: 10, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.85)", borderWidth: 1, borderColor: "rgba(154,184,244,0.55)" },
     activityTitle: { color: COLORS.primaryText, fontWeight: "900", fontSize: 13 },
     activityPlace: { color: COLORS.mutedText, fontWeight: "700", fontSize: 12, marginTop: 2 },
-    mapPlaceholder: { height: isCompact ? 180 : 220, borderRadius: 22, borderWidth: 2, borderColor: "rgba(154,184,244,0.9)", backgroundColor: "rgba(255,255,255,0.85)", alignItems: "center", justifyContent: "center", paddingHorizontal: 18, gap: 6 },
-    mapPlaceholderTitle: { color: COLORS.primaryText, fontWeight: "900" },
-    mapPlaceholderText: { color: COLORS.mutedText, fontWeight: "600", fontSize: 12, textAlign: "center" },
+    mapPlaceholder: { height: isCompact ? 180 : 220, borderRadius: 22, borderWidth: 2, borderColor: "rgba(154,184,244,0.9)", overflow: "hidden" },
     sportBanner: { marginTop: 14, borderRadius: 26, padding: 14, borderWidth: 2, borderColor: COLORS.blue, backgroundColor: "rgba(255,255,255,0.9)", flexDirection: "row", alignItems: "center", gap: 10 },
     sportBannerText: { flex: 1, color: COLORS.mutedText, fontWeight: "800", fontSize: 12 },
   });

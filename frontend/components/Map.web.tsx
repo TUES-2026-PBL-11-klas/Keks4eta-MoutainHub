@@ -1,11 +1,12 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { View } from "react-native";
 
-export default function Map() {
-  const [LeafletMap, setLeafletMap] = useState<ComponentType | null>(null);
+interface MapProps { category?: string; }
+
+export default function Map({ category }: MapProps) {
+  const [LeafletMap, setLeafletMap] = useState<ComponentType<MapProps> | null>(null);
 
   useEffect(() => {
-    // Dynamic import runs only in the browser, never on the server
     import("./MapLeaflet").then((mod) => {
       setLeafletMap(() => mod.default);
     });
@@ -17,7 +18,7 @@ export default function Map() {
 
   return (
     <View style={{ flex: 1 }}>
-      <LeafletMap />
+      <LeafletMap category={category} />
     </View>
   );
 }

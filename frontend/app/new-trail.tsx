@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ImageBackground,
   Platform,
@@ -16,6 +16,8 @@ import { Stack, useRouter } from "expo-router";
 import { Image } from "expo-image";
 
 import LineBackground from "@/assets/images/group-R5.svg";
+import { useCreateTrail } from "@/hooks/api";
+import { getToken } from "@/lib/auth";
 
 const COLORS = {
   green: "#00DF56",
@@ -43,16 +45,43 @@ const DIFFICULTY_CONFIG: Record<Difficulty, { label: string; color: string }> = 
   hard: { label: "Hard", color: COLORS.brown },
 };
 
+const DIFFICULTY_NUM: Record<Difficulty, number> = { easy: 1, medium: 3, hard: 5 };
+const CATEGORY_MAP: Record<UserMode, string>     = { walk: "hiking", ski: "ski", mtb: "mtb" };
+
 export default function NewTrailScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
 
+  const [token, setToken] = useState("");
+  const { createTrail, loading, error } = useCreateTrail(token);
+
+  const [trailName, setTrailName] = useState("");
+  const [trailDescription, setTrailDescription] = useState("");
   const [trailMode, setTrailMode] = useState<UserMode>("mtb");
   const [trailLengthKm, setTrailLengthKm] = useState("");
   const [trailDifficulty, setTrailDifficulty] = useState<Difficulty>("medium");
   const [trailStartImageUrl, setTrailStartImageUrl] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getToken().then((t) => setToken(t ?? ""));
+  }, []);
+
+  const handleSave = async () => {
+    setSaveError(null);
+    if (!trailName.trim()) { setSaveError("Trail name is required."); return; }
+    const result = await createTrail({
+      name:              trailName.trim(),
+      category:          CATEGORY_MAP[trailMode],
+      difficulty:        DIFFICULTY_NUM[trailDifficulty],
+      description:       trailDescription.trim() || undefined,
+      distance_km:       trailLengthKm ? parseFloat(trailLengthKm) : undefined,
+      route:             { type: "LineString", coordinates: [] },
+    });
+    if (result) router.back();
+  };
 
   return (
     <View style={styles.screen}>
@@ -75,12 +104,42 @@ export default function NewTrailScreen() {
             <Text style={styles.title}>Add new trail</Text>
 
             <Pressable
-              style={styles.saveButton}
-              onPress={() => router.back()}
+              style={[styles.saveButton, loading && { opacity: 0.6 }]}
+              onPress={handleSave}
+              disabled={loading}
               hitSlop={8}
             >
-              <Text style={styles.saveButtonText}>Save</Text>
+              <Text style={styles.saveButtonText}>{loading ? "Saving…" : "Save"}</Text>
             </Pressable>
+          </View>
+
+          {(saveError || error) && (
+            <Text style={{ color: "#c0392b", fontWeight: "700", marginBottom: 10, paddingHorizontal: 4 }}>
+              {saveError ?? error}
+            </Text>
+          )}
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Trail name</Text>
+            <TextInput
+              value={trailName}
+              onChangeText={setTrailName}
+              placeholder="e.g. Vitosha Loop"
+              placeholderTextColor="#90A6CB"
+              style={styles.input}
+            />
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Description</Text>
+            <TextInput
+              value={trailDescription}
+              onChangeText={setTrailDescription}
+              placeholder="Describe the trail…"
+              placeholderTextColor="#90A6CB"
+              multiline
+              style={[styles.input, { height: 80, paddingTop: 12, textAlignVertical: "top" }]}
+            />
           </View>
 
           <View style={styles.section}>

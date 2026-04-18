@@ -17,7 +17,7 @@ import { Image } from "expo-image";
 
 import LineBackground from "@/assets/images/group-R5.svg";
 import Map from "@/components/Map";
-
+import { useCategoryReviews } from "@/hooks/api";
 
 const COLORS = {
   green: "#00DF56",
@@ -51,34 +51,20 @@ export default function HomeConceptScreen() {
 
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
 
-  const activity = useMemo(
-    () => [
-      {
-        id: "1",
-        name: "Ivan Ivanov",
-        title: "visited Rila Mountain",
-        body: "Lorem ipsum dolor sit amet. In facilis veritat",
-      },
-      {
-        id: "2",
-        name: "Maria Petrova",
-        title: "completed MTB Trail",
-        body: "Beautiful day and great views along the ridge.",
-      },
-      {
-        id: "3",
-        name: "Georgi Georgiev",
-        title: "saved a Walk Trail",
-        body: "Perfect for beginners; very chill route.",
-      },
-    ],
-    []
-  );
+  const { reviews: hikingReviews } = useCategoryReviews("hiking", { size: 3 });
+  const { reviews: skiReviews }    = useCategoryReviews("ski",    { size: 3 });
+  const { reviews: mtbReviews }    = useCategoryReviews("mtb",    { size: 3 });
+
+  const activity = useMemo(() => [
+    ...hikingReviews.map((r) => ({ id: r.id, name: r.name, title: `rated a trail ${r.rating}/5`, body: r.description ?? "", color: COLORS.green })),
+    ...skiReviews.map((r) => ({ id: r.id, name: r.name, title: `rated a trail ${r.rating}/5`, body: r.description ?? "", color: COLORS.blue })),
+    ...mtbReviews.map((r) => ({ id: r.id, name: r.name, title: `rated a trail ${r.rating}/5`, body: r.description ?? "", color: COLORS.brown })),    
+  ], [hikingReviews, skiReviews, mtbReviews]);
 
   const filteredActivity = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return activity;
-    return activity.filter((item) =>
+    return activity.filter((item: typeof activity[0]) =>
       `${item.name} ${item.title} ${item.body}`.toLowerCase().includes(q)
     );
   }, [activity, searchQuery]);
@@ -236,7 +222,7 @@ export default function HomeConceptScreen() {
             <View style={styles.feedList}>
               {filteredActivity.map((item) => (
                 <View key={item.id} style={styles.feedItem}>
-                  <View style={styles.feedDot} />
+                  <View style={[styles.feedDot, { backgroundColor: item.color }]} />
                   <View style={styles.feedTextCol}>
                     <Text style={styles.feedTitle}>{item.name}</Text>
                     <Text style={styles.feedSubtitle}>
