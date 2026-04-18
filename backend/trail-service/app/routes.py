@@ -22,15 +22,6 @@ def ready():
         return {"status": "not ready"}, 503
 
 # ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def get_enum_values(enum_name: str):
-    supabase = current_app.extensions.get("supabase_client")
-    response = supabase.rpc("get_enum_values", {"enum_name": enum_name}).execute()
-    return {row["value"] for row in response.data}
-
-# ---------------------------------------------------------------------------
 # POST /  — create a new trail (auth required)
 # ---------------------------------------------------------------------------
 
@@ -66,15 +57,6 @@ def create_trail():
         return jsonify({"error": f"Missing fields: {', '.join(missing)}"}), 400
 
 
-    valid_categories = get_enum_values("category_enum")
-    valid_statuses = get_enum_values("status_enum")
-
-    if data["category"] not in valid_categories:
-        return jsonify({"error": f"Invalid category: {data['category']}"}), 400
-
-    if "status" in data and data["status"] not in valid_statuses:
-        return jsonify({"error": f"Invalid status: {data['status']}"}), 400
-
     try:
         payload = {
             "user_id": request.user.id,
@@ -96,6 +78,8 @@ def create_trail():
         return jsonify(response.data[0]), 201
 
     except Exception as e:
+        if "invalid input value for enum" in str(e).lower():
+            return jsonify({"error": "Invalid field value"}), 400
         return jsonify({"error": str(e)}), 500
 
 
@@ -181,21 +165,16 @@ def get_trails_by_user(user_id):
             .eq("user_id", user_id)
         )
 
-        valid_categories = get_enum_values("category_enum")
-        valid_statuses = get_enum_values("status_enum")
-
         if category := request.args.get("category"):
-            if category not in valid_categories:
-                return jsonify({"error": f"Invalid category: {category}"}), 400
             query = query.eq("category", category)
 
         if status := request.args.get("status"):
-            if status not in valid_statuses:
-                return jsonify({"error": f"Invalid status: {status}"}), 400
             query = query.eq("status", status)
 
         response = query.order("created_at", desc=True).execute()
         return jsonify(response.data), 200
 
     except Exception as e:
+        if "invalid input value for enum" in str(e).lower():
+            return jsonify({"error": "Invalid filter value"}), 400
         return jsonify({"error": str(e)}), 500

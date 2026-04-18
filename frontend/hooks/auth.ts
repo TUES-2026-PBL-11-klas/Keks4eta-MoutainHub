@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
 
@@ -13,6 +13,7 @@ export interface LoginPayload {
 
 export interface LoginResponse {
   message: string;
+  user_id: string;
   display_name: string;
   access_token: string;
   refresh_token: string;
@@ -26,6 +27,12 @@ export interface SignupPayload {
 
 export interface SignupResponse {
   message: string;
+  display_name: string;
+}
+
+export interface UserProfile {
+  user_id: string;
+  email: string;
   display_name: string;
 }
 
@@ -132,4 +139,26 @@ export function useLogout(accessToken: string) {
   }, [accessToken]);
 
   return { logout, loading, error };
+}
+
+export function useUser(userId: string) {
+  const [user, setUser]       = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    setLoading(true);
+    setError(null);
+
+    fetch(`${API_URL}/auth/user/${userId}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((data: UserProfile) => { setUser(data); setLoading(false); })
+      .catch((e: Error) => { setError(e.message); setLoading(false); });
+  }, [userId]);
+
+  return { user, loading, error };
 }

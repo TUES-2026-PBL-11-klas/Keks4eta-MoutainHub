@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ImageBackground,
   Platform,
@@ -14,6 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, usePathname, useRouter } from "expo-router";
 import { Image } from "expo-image";
+import { isLoggedIn } from "@/lib/auth";
 
 import LineBackground from "@/assets/images/group-R5.svg";
 import Map from "@/components/Map";
@@ -48,6 +49,9 @@ export default function HomeConceptScreen() {
   const scrollRef = useRef<ScrollView | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [authed, setAuthed] = useState(false);
+
+  useEffect(() => { isLoggedIn().then(setAuthed); }, []);
 
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
 
@@ -158,13 +162,15 @@ export default function HomeConceptScreen() {
                   </Pressable>
                 )}
 
-                <Pressable
-                  style={styles.signupButton}
-                  onPress={() => router.push("/signup")}
-                  hitSlop={8}
-                >
-                  <Text style={styles.signupButtonText}>Sign up</Text>
-                </Pressable>
+                {!authed && (
+                  <Pressable
+                    style={styles.signupButton}
+                    onPress={() => router.push("/signup")}
+                    hitSlop={8}
+                  >
+                    <Text style={styles.signupButtonText}>Sign up</Text>
+                  </Pressable>
+                )}
 
                 <Pressable
                   style={styles.profileDot}

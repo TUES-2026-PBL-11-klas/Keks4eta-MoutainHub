@@ -16,7 +16,8 @@ import { Stack, usePathname, useRouter } from "expo-router";
 import { Image } from "expo-image";
 
 import LineBackground from "@/assets/images/group-R5.svg";
-import { isLoggedIn, logout } from "@/lib/auth";
+import { isLoggedIn, logout, getToken, getUserId, setUserId } from "@/lib/auth";
+import { useLogout, useUser } from "@/hooks/api";
 
 const COLORS = {
   green: "#00DF56",
@@ -46,8 +47,10 @@ export default function ProfileScreen() {
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
 
   const [ready, setReady] = useState(false);
-  const [edit, setEdit] = useState(false);
+  const [edit] = useState(false);
   const [userMode, setUserMode] = useState<UserMode>("mtb");
+  const [token, setTokenState] = useState("");
+  const [userId, setUserIdState] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -56,21 +59,50 @@ export default function ProfileScreen() {
     password: "",
   });
 
+  const { logout: apiLogout } = useLogout(token);
+  const { user } = useUser(userId);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const ok = await isLoggedIn();
       if (cancelled) return;
-      if (!ok) {
-        router.replace("/login");
-        return;
+      if (!ok) { router.replace("/login"); return; }
+      const [t, uid] = await Promise.all([getToken(), getUserId()]);
+      if (cancelled) return;
+      let resolvedUid = uid;
+      if (!resolvedUid && t) {
+        try {
+          const payload = JSON.parse(atob(t.split(".")[1]));
+          resolvedUid = payload.sub ?? null;
+          if (resolvedUid) await setUserId(resolvedUid);
+        } catch {}
       }
+      setTokenState(t ?? "");
+      setUserIdState(resolvedUid ?? "");
       setReady(true);
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [router]);
+
+  useEffect(() => {
+    if (!user) return;
+    const parts = (user.display_name || "").trim().split(/\s+/);
+    const firstName = parts[0] ?? "";
+    const surname = parts.slice(1).join(" ");
+    setForm((f) => ({
+      ...f,
+      name: firstName,
+      surname,
+      email: user.email || "",
+    }));
+  }, [user]);
+
+  const handleLogout = async () => {
+    await apiLogout();
+    await logout();
+    router.replace("/login");
+  };
 
   const refresh = () => {
     router.replace(pathname as any);
@@ -138,10 +170,7 @@ export default function ProfileScreen() {
               <Pressable
                 style={styles.profileDot}
                 hitSlop={8}
-                onPress={async () => {
-                  await logout();
-                  router.replace("/login");
-                }}
+                onPress={handleLogout}
               />
             </View>
           </View>
@@ -224,10 +253,8 @@ export default function ProfileScreen() {
                 <Pressable style={styles.secondaryButton} onPress={() => router.push("/new-trail")}>
                   <Text style={styles.secondaryButtonText}>Add new trail</Text>
                 </Pressable>
-                <Pressable style={styles.primaryButton} onPress={() => setEdit((v) => !v)}>
-                  <Text style={styles.primaryButtonText}>
-                    {edit ? "Save profile" : "Edit profile"}
-                  </Text>
+                <Pressable style={styles.primaryButton} onPress={handleLogout}>
+                  <Text style={styles.primaryButtonText}>Log Out</Text>
                 </Pressable>
               </View>
             </View>

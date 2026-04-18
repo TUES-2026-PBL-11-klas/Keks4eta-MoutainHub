@@ -18,7 +18,7 @@ import { Link, Stack, useRouter } from "expo-router";
 import LineBackground from "../assets/images/group-R5.png";
 import LogoMark from "../assets/images/logo.svg";
 import LogoText from "../assets/images/logotext.svg";
-import { setLoggedIn } from "../lib/auth";
+import { useSignup } from "../hooks/api";
 
 const COLORS = {
   green: "#00DF56",
@@ -46,9 +46,12 @@ export default function SignupScreen() {
     password: "",
     confirmPassword: "",
   });
+  const { signup, loading, error } = useSignup();
+
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const updateField = (key, value) =>
     setForm((current) => ({
@@ -191,14 +194,28 @@ export default function SignupScreen() {
               <Text style={styles.optionText}>I accept privacy terms</Text>
             </Pressable>
 
+            {(formError || error) ? (
+              <Text style={{ color: "#c0392b", fontWeight: "700", fontSize: 13, marginBottom: 8, textAlign: "center" }}>
+                {formError || error}
+              </Text>
+            ) : null}
+
             <Pressable
-              style={styles.primaryButton}
+              style={[styles.primaryButton, loading && { opacity: 0.6 }]}
+              disabled={loading}
               onPress={async () => {
-                await setLoggedIn(true);
-                router.replace("/(tabs)");
+                setFormError("");
+                if (!form.email.trim())         { setFormError("Email is required.");                   return; }
+                if (!form.password)             { setFormError("Password is required.");                return; }
+                if (form.password.length < 6)   { setFormError("Password must be at least 6 characters."); return; }
+                if (form.password !== form.confirmPassword) { setFormError("Passwords do not match.");    return; }
+                if (!acceptTerms)               { setFormError("Please accept the terms.");             return; }
+                const displayName = [form.name, form.surname].filter(Boolean).join(" ") || undefined;
+                const result = await signup({ email: form.email.trim(), password: form.password, display_name: displayName });
+                if (result) router.replace("/login");
               }}
             >
-              <Text style={styles.primaryButtonText}>Sign Up</Text>
+              <Text style={styles.primaryButtonText}>{loading ? "Signing up…" : "Sign Up"}</Text>
             </Pressable>
 
             <View style={styles.footerRow}>

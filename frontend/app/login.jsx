@@ -20,7 +20,8 @@ import LineBackground from "../assets/images/group-R5.png";
 import HeroImage from "../assets/images/image.png";
 import LogoMark from "../assets/images/logo.svg";
 import LogoText from "../assets/images/logotext.svg";
-import { setLoggedIn } from "../lib/auth";
+import { setLoggedIn, setToken, setDisplayName, setUserId } from "../lib/auth";
+import { useLogin } from "../hooks/api";
 
 const COLORS = {
   green: "#00DF56",
@@ -40,6 +41,8 @@ export default function LoginScreen() {
   const { width } = useWindowDimensions();
   const isCompact = width < 768;
 
+  const { login, loading, error } = useLogin();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -47,6 +50,7 @@ export default function LoginScreen() {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
 
@@ -148,14 +152,30 @@ export default function LoginScreen() {
                 </Pressable>
               </View>
 
+              {(formError || error) ? (
+                <Text style={{ color: "#c0392b", fontWeight: "700", fontSize: 13, marginBottom: 8, textAlign: "center" }}>
+                  {formError || error}
+                </Text>
+              ) : null}
+
               <Pressable
-                style={styles.primaryButton}
+                style={[styles.primaryButton, loading && { opacity: 0.6 }]}
+                disabled={loading}
                 onPress={async () => {
-                  await setLoggedIn(true);
-                  router.replace("/(tabs)");
+                  setFormError("");
+                  if (!email.trim())    { setFormError("Email is required.");    return; }
+                  if (!password.trim()) { setFormError("Password is required."); return; }
+                  const result = await login({ email: email.trim(), password });
+                  if (result) {
+                    await setToken(result.access_token);
+                    await setDisplayName(result.display_name);
+                    await setUserId(result.user_id);
+                    await setLoggedIn(true);
+                    router.replace("/(tabs)");
+                  }
                 }}
               >
-                <Text style={styles.primaryButtonText}>Log In</Text>
+                <Text style={styles.primaryButtonText}>{loading ? "Logging in…" : "Log In"}</Text>
               </Pressable>
 
               <View style={styles.footerRow}>
