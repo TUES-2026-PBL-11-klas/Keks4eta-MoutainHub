@@ -129,6 +129,35 @@ export function useUserReviews(userId: string, filters: ReviewFilters = {}) {
   return { reviews, loading, error, refresh: fetch_ };
 }
 
+export function useCategoryReviews(category: string, filters: ReviewFilters = {}) {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState<string | null>(null);
+
+  const fetch_ = useCallback(() => {
+    if (!category) return;
+    setLoading(true);
+    setError(null);
+
+    const qs  = buildParams(filters);
+    const url = qs
+      ? `${API_URL}/reviews/category/${category}?${qs}`
+      : `${API_URL}/reviews/category/${category}`;
+
+    fetch(url)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((data: { reviews: Review[] }) => { setReviews(data.reviews); setLoading(false); })
+      .catch((e: Error)                   => { setError(e.message); setLoading(false); });
+  }, [category, filters.since, filters.size, filters.page]);
+
+  useEffect(() => { fetch_(); }, [fetch_]);
+
+  return { reviews, loading, error, refresh: fetch_ };
+}
+
 export function useCreateReview(accessToken: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);

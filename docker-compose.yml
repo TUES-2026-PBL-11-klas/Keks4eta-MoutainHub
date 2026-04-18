@@ -38,6 +38,7 @@ services:
       - SUPABASE_KEY=${SUPABASE_KEY}
       - FLASK_ENV=development
       - FLASK_DEBUG=1
+      - TRAIL_SERVICE_URL=${TRAIL_SERVICE_URL}
 
   trail-service:
     build: ./backend/trail-service

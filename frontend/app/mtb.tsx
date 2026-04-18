@@ -16,7 +16,7 @@ import { Image } from "expo-image";
 
 import LineBackground from "@/assets/images/group-R5.svg";
 import { PostDetailsModal, type FeedPost } from "@/components/post-details-modal";
-import { useTrails, useReviews } from "@/hooks/api";
+import { useTrails, useCategoryReviews } from "@/hooks/api";
 import Map from "@/components/Map";
 
 const COLORS = {
@@ -52,7 +52,7 @@ export default function MtbHome() {
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
 
   const { trails } = useTrails({ category: "mtb" });
-  const { reviews } = useReviews({ size: 10 });
+  const { reviews } = useCategoryReviews("mtb", { size: 10 });
 
   const posts: FeedPost[] = reviews.map((r) => ({
     id: r.id,
