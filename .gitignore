@@ -39,4 +39,4 @@ Thumbs.db
 .terraform.lock.hcl
 .terraform/
 apply-local.sh
-secret.yaml
+secrets.yaml
