@@ -239,6 +239,9 @@ jobs:
       # -------------------------
       - name: Create Kubernetes cluster
         uses: helm/kind-action@v1
+        with:
+          cluster_name: kind
+
 
       # -------------------------
       # 4. Build images (RUN FROM ROOT)
@@ -257,7 +260,7 @@ jobs:
           kind load docker-image mountainhub-auth:latest
           kind load docker-image mountainhub-review:latest
           kind load docker-image mountainhub-trail:latest
-          kind load docker-image mountainhub-frontend:latest
+
 
 
 
