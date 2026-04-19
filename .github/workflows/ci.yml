@@ -269,8 +269,8 @@ jobs:
       # -------------------------
       - name: Deploy Kubernetes manifests
         run: |
-          chmod +x infrastructure/k8s/apply-local.sh
-          ./infrastructure/k8s/apply-local.sh
+          chmod +x infrastructure/k8s/apply.sh
+          ./infrastructure/k8s/apply.sh
 
       # -------------------------
       # 7. Wait for readiness
