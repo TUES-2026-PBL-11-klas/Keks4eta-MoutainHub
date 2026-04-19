@@ -1,6 +1,3 @@
-from unittest.mock import MagicMock
-
-
 class TestHealth:
     def test_health_returns_alive(self, client):
         response = client.get("/health")
