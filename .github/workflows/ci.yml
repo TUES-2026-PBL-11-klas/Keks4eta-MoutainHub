@@ -347,6 +347,7 @@ jobs:
         run: |
           kubectl run test-client \
             --image=curlimages/curl \
+            --namespace=mountainhub \
             --rm -i --restart=Never -- \
             curl http://api-gateway
 
