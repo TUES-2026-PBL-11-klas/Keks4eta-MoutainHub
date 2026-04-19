@@ -21,12 +21,13 @@ class TestLogin:
         assert body["refresh_token"] == "refresh-tok"
         assert body["display_name"] == "Test User"
 
-    def test_login_invalid_credentials_returns_400(self, client, mock_supabase):
+    def test_login_invalid_credentials_returns_401(self, client, mock_supabase):
         mock_supabase.auth.sign_in_with_password.side_effect = Exception("Invalid login credentials")
 
         response = client.post("/login", json={"email": "bad@example.com", "password": "wrong"})
 
-        assert response.status_code == 400
+        assert response.status_code == 401
+        assert response.get_json()["message"] == "Credentials incorrect"
 
     def test_login_calls_supabase_with_credentials(self, client, mock_supabase, mock_user):
         self._mock_login_response(mock_supabase, mock_user)
