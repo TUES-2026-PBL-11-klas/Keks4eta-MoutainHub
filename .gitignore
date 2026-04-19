@@ -9,7 +9,8 @@ __pycache__/
 venv/
 env/
 
-
+# claude
+.claude/
 
 # Node / React Native
 node_modules/
