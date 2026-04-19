@@ -12,6 +12,8 @@ kubectl apply -f infrastructure/k8s/backend/review-service/service.yaml
 kubectl apply -f infrastructure/k8s/backend/review-service/deployment.yaml
 kubectl apply -f infrastructure/k8s/backend/trail-service/service.yaml
 kubectl apply -f infrastructure/k8s/backend/trail-service/deployment.yaml
+kubectl apply -f infrastructure/k8s/backend/media-service/service.yaml
+kubectl apply -f infrastructure/k8s/backend/media-service/deployment.yaml
 kubectl apply -f infrastructure/k8s/frontend/service.yaml
 kubectl apply -f infrastructure/k8s/frontend/deployment.yaml
 
