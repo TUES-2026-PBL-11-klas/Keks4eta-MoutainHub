@@ -1,5 +1,5 @@
 from flask import Flask
-from supabase import create_client, Client
+from supabase import create_client
 
 def create_app():
     app = Flask("user_service")
@@ -10,10 +10,10 @@ def create_app():
 
     if not supabase_url or not supabase_key:
         raise RuntimeError("Missing SUPABASE_URL or SUPABASE_KEY")
-    
-    supabase: Client = create_client(supabase_url, supabase_key)
-    app.extensions["supabase_client"] = supabase
-    print("Supabase client initialized")
+
+    app.extensions["supabase_client"] = create_client(supabase_url, supabase_key)
+    app.extensions["supabase_admin_client"] = create_client(supabase_url, supabase_key)
+    print("Supabase clients initialized")
 
     from .routes import auth_bp
     app.register_blueprint(auth_bp)

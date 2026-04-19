@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 
 import LineBackground from "@/assets/images/group-R5.svg";
+import { useUser, useUserTrails, useUserReviews } from "@/hooks/api";
 
 const COLORS = {
   blue: "#9AB8F4",
@@ -16,15 +17,6 @@ const COLORS = {
   dark: "#111111",
 };
 
-const USER_MOCK: Record<string, { name: string; bio: string }> = {
-  u1: { name: "Ivan Ivanov", bio: "Hike lover. Weekend explorer." },
-  u2: { name: "Maria Petrova", bio: "MTB and mountains." },
-  u3: { name: "Georgi Georgiev", bio: "Ski season all year (almost)." },
-  u4: { name: "Petar Petrov", bio: "Long rides, big climbs." },
-  u5: { name: "Nikol Nikolova", bio: "Trail builder & photographer." },
-  u6: { name: "Elena Dimitrova", bio: "Ski touring beginner." },
-};
-
 export default function UserProfileScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -32,8 +24,12 @@ export default function UserProfileScreen() {
   const isCompact = width < 768;
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
 
-  const id = typeof params.id === "string" ? params.id : "unknown";
-  const user = USER_MOCK[id] ?? { name: "Unknown user", bio: "No details yet." };
+  const id = typeof params.id === "string" ? params.id : "";
+  const { user, loading: userLoading } = useUser(id);
+  const { trails, loading: trailsLoading } = useUserTrails(id);
+  const { reviews, loading: reviewsLoading } = useUserReviews(id);
+
+  const displayName = user?.display_name || user?.email || "Unknown user";
 
   return (
     <View style={styles.screen}>
@@ -53,23 +49,59 @@ export default function UserProfileScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.name}>{user.name}</Text>
-            <Text style={styles.bio}>{user.bio}</Text>
+            {userLoading ? (
+              <Text style={styles.bio}>Loading…</Text>
+            ) : (
+              <>
+                <Text style={styles.name}>{displayName}</Text>
+                {user?.email ? <Text style={styles.bio}>{user.email}</Text> : null}
+              </>
+            )}
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Trails</Text>
-              <View style={styles.item}>
-                <Ionicons name="map-outline" size={16} color={COLORS.primaryText} />
-                <Text style={styles.itemText}>No trails loaded yet (mock).</Text>
-              </View>
+              {trailsLoading ? (
+                <View style={styles.item}>
+                  <Text style={styles.itemText}>Loading…</Text>
+                </View>
+              ) : trails.length === 0 ? (
+                <View style={styles.item}>
+                  <Ionicons name="map-outline" size={16} color={COLORS.primaryText} />
+                  <Text style={styles.itemText}>No trails yet.</Text>
+                </View>
+              ) : (
+                trails.map((trail) => (
+                  <View key={trail.id} style={styles.item}>
+                    <Ionicons name="map-outline" size={16} color={COLORS.primaryText} />
+                    <Text style={styles.itemText}>{trail.name}</Text>
+                    {trail.distance_km ? (
+                      <Text style={[styles.itemText, { marginLeft: "auto" }]}>{trail.distance_km.toFixed(1)} km</Text>
+                    ) : null}
+                  </View>
+                ))
+              )}
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Posts</Text>
-              <View style={styles.item}>
-                <Ionicons name="images-outline" size={16} color={COLORS.primaryText} />
-                <Text style={styles.itemText}>No posts loaded yet (mock).</Text>
-              </View>
+              <Text style={styles.sectionTitle}>Reviews</Text>
+              {reviewsLoading ? (
+                <View style={styles.item}>
+                  <Text style={styles.itemText}>Loading…</Text>
+                </View>
+              ) : reviews.length === 0 ? (
+                <View style={styles.item}>
+                  <Ionicons name="star-outline" size={16} color={COLORS.primaryText} />
+                  <Text style={styles.itemText}>No reviews yet.</Text>
+                </View>
+              ) : (
+                reviews.map((review) => (
+                  <View key={review.id} style={[styles.item, { marginBottom: 6 }]}>
+                    <Ionicons name="star" size={16} color={COLORS.primaryText} />
+                    <Text style={styles.itemText}>{review.name}</Text>
+                    <Text style={[styles.itemText, { marginLeft: "auto" }]}>{"★".repeat(review.rating)}</Text>
+                  </View>
+                ))
+              )}
             </View>
           </View>
         </ScrollView>
