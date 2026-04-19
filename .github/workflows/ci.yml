@@ -253,11 +253,13 @@ jobs:
       # -------------------------
       - name: Load images into kind
         run: |
-          kind load docker-image api-service:latest
-          kind load docker-image auth-service:latest
-          kind load docker-image user-service:latest
-          kind load docker-image review-service:latest
-          kind load docker-image trail-service:latest
+          kind load docker-image mountainhub-api-gateway:latest
+          kind load docker-image mountainhub-auth:latest
+          kind load docker-image mountainhub-review:latest
+          kind load docker-image mountainhub-trail:latest
+          kind load docker-image mountainhub-frontend:latest
+
+
 
       # -------------------------
       # 6. Apply manifests (RUN FROM ROOT)
