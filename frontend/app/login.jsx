@@ -69,7 +69,7 @@ export default function LoginScreen() {
         });
       }
     }
-  }, [response]);
+  }, [response, googleLogin, router]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
