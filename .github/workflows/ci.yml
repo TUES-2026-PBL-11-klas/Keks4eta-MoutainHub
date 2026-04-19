@@ -291,22 +291,6 @@ jobs:
           chmod +x infrastructure/k8s/apply.sh
           ./infrastructure/k8s/apply.sh
 
-      #DEBUG
-      - name: Debug Kubernetes state
-        if: always()
-        run: |
-          echo "==> Pods:"
-          kubectl get pods -n mountainhub
-
-          echo "==> Deployments:"
-          kubectl get deployments -n mountainhub
-
-          echo "==> Services:"
-          kubectl get svc -n mountainhub
-
-          echo "==> Events (most important):"
-          kubectl get events -n mountainhub --sort-by=.metadata.creationTimestamp
-
       # -------------------------
       # 8. Wait for readiness
       # -------------------------
@@ -314,23 +298,6 @@ jobs:
         run: |
           kubectl wait --for=condition=available deployment \
           --all -n mountainhub --timeout=120s
-
-      #DEBUG
-      - name: Debug Kubernetes state
-        if: always()
-        run: |
-          echo "==> Pods:"
-          kubectl get pods -n mountainhub
-
-          echo "==> Deployments:"
-          kubectl get deployments -n mountainhub
-
-          echo "==> Services:"
-          kubectl get svc -n mountainhub
-
-          echo "==> Events (most important):"
-          kubectl get events -n mountainhub --sort-by=.metadata.creationTimestamp
-          
 
       # -------------------------
       # 9. Verify cluster
