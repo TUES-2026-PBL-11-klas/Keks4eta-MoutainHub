@@ -349,7 +349,7 @@ jobs:
             --image=curlimages/curl \
             --namespace=mountainhub \
             --rm -i --restart=Never -- \
-            curl http://api-gateway
+            curl --max-time 10 http://api-gateway:8080/health
 
       # -------------------------
       # 11. Debug on failure
