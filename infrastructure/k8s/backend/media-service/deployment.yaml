@@ -23,7 +23,7 @@ spec:
       containers:
         - name: media-service
           image: mountainhub-media:latest
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
           envFrom:

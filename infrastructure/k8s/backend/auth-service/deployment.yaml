@@ -23,7 +23,7 @@ spec:
       containers:
         - name: auth-service
           image: mountainhub-auth:latest
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
           envFrom:

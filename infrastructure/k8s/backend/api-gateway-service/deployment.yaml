@@ -23,7 +23,7 @@ spec:
       containers:
         - name: api-gateway
           image: mountainhub-api-gateway:latest
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           envFrom:

@@ -23,7 +23,7 @@ spec:
       containers:
         - name: frontend
           image: mountainhub-frontend:latest
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
           livenessProbe:

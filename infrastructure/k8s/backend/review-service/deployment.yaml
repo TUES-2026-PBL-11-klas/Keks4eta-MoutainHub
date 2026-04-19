@@ -23,7 +23,7 @@ spec:
       containers:
         - name: review-service
           image: mountainhub-review:latest
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
           envFrom:
