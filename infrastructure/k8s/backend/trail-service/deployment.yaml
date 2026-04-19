@@ -17,8 +17,7 @@ spec:
     spec:
       containers:
         - name: trail-service
-          # Build locally: docker build -t mountainhub-trail:local ./backend/trail-service
-          image: mountainhub-trail:local
+          image: mountainhub-trail:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000

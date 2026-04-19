@@ -17,8 +17,7 @@ spec:
     spec:
       containers:
         - name: review-service
-          # Build locally: docker build -t mountainhub-review:local ./backend/review-service
-          image: mountainhub-review:local
+          image: mountainhub-review:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000

@@ -17,8 +17,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          # Build locally: docker build -t mountainhub-api-gateway:local ./backend/api-gateway-service
-          image: mountainhub-api-gateway:local
+          image: mountainhub-api-gateway:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

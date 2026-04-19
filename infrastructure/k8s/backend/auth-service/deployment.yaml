@@ -17,8 +17,7 @@ spec:
     spec:
       containers:
         - name: auth-service
-          # Build locally: docker build -t mountainhub-auth:local ./backend/user-service
-          image: mountainhub-auth:local
+          image: mountainhub-auth:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
