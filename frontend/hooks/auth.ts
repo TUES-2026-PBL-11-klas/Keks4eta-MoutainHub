@@ -141,6 +141,39 @@ export function useLogout(accessToken: string) {
   return { logout, loading, error };
 }
 
+export function useGoogleLogin() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState<string | null>(null);
+
+  const googleLogin = useCallback(async (idToken: string): Promise<LoginResponse | null> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const r = await fetch(`${API_URL}/auth/google`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ id_token: idToken }),
+      });
+
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        throw new Error(body.message ?? `HTTP ${r.status}`);
+      }
+
+      const data: LoginResponse = await r.json();
+      setLoading(false);
+      return data;
+    } catch (e: any) {
+      setError(e.message);
+      setLoading(false);
+      return null;
+    }
+  }, []);
+
+  return { googleLogin, loading, error };
+}
+
 export function useUser(userId: string) {
   const [user, setUser]       = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);

@@ -61,6 +61,38 @@ def signup():
     }), 201
 
 
+@auth_bp.route("/google", methods=["POST"])
+def google_login():
+    data = request.json or {}
+    id_token = data.get("id_token")
+
+    if not id_token:
+        return jsonify({"message": "Missing id_token"}), 400
+
+    try:
+        response = current_app.extensions["supabase_client"].auth.sign_in_with_id_token({
+            "provider": "google",
+            "token": id_token,
+        })
+    except Exception:
+        return jsonify({"message": "Google login failed"}), 401
+
+    display_name = (
+        response.user.user_metadata.get("full_name")
+        or response.user.user_metadata.get("display_name")
+        or response.user.user_metadata.get("name")
+        or ""
+    )
+
+    return jsonify({
+        "message": "Login successful",
+        "user_id": response.user.id,
+        "display_name": display_name,
+        "refresh_token": response.session.refresh_token,
+        "access_token": response.session.access_token,
+    }), 200
+
+
 @auth_bp.route("/logout", methods=["POST"])
 @require_auth
 def logout():
