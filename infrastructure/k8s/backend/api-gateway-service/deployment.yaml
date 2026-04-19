@@ -1,45 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-service
+  name: api-gateway
   namespace: mountainhub
   labels:
-    app: auth-service
+    app: api-gateway
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: auth-service
+      app: api-gateway
   template:
     metadata:
       labels:
-        app: auth-service
+        app: api-gateway
     spec:
       containers:
-        - name: auth-service
-          # Build locally: docker build -t mountainhub-auth:local ./backend/user-service
-          image: mountainhub-auth:local
+        - name: api-gateway
+          image: mountainhub-api-gateway:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 5000
+            - containerPort: 8080
           envFrom:
             - configMapRef:
                 name: mountainhub-config
-            - secretRef:
-                name: mountainhub-secrets
           livenessProbe:
             httpGet:
               path: /health
-              port: 5000
+              port: 8080
             initialDelaySeconds: 10
             periodSeconds: 15
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /ready
-              port: 5000
-            initialDelaySeconds: 5
-            periodSeconds: 10
             failureThreshold: 3
           resources:
             requests:
@@ -47,4 +37,4 @@ spec:
               cpu: "100m"
             limits:
               memory: "256Mi"
-              cpu: "250m"
+              cpu: "300m"

@@ -1,24 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: review-service
+  name: auth-service
   namespace: mountainhub
   labels:
-    app: review-service
+    app: auth-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: review-service
+      app: auth-service
   template:
     metadata:
       labels:
-        app: review-service
+        app: auth-service
     spec:
       containers:
-        - name: review-service
-          # Build locally: docker build -t mountainhub-review:local ./backend/review-service
-          image: mountainhub-review:local
+        - name: auth-service
+          image: mountainhub-auth:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
@@ -38,7 +37,7 @@ spec:
             httpGet:
               path: /ready
               port: 5000
-            initialDelaySeconds: 5
+            initialDelaySeconds: 20
             periodSeconds: 10
             failureThreshold: 3
           resources:

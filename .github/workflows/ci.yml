@@ -215,3 +215,118 @@ jobs:
       - name: Show logs on failure
         if: failure()
         run: cat server.log
+  # -------------------------
+  # KUBERNETES INTEGRATION TEST
+  # -------------------------
+  k8s-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # -------------------------
+      # 1. Checkout
+      # -------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -------------------------
+      # 2. Setup Docker
+      # -------------------------
+      - name: Setup Docker
+        uses: docker/setup-buildx-action@v3
+
+      # -------------------------
+      # 3. Create kind cluster
+      # -------------------------
+      - name: Create Kubernetes cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: kind
+
+
+      # -------------------------
+      # 4. Build images (RUN FROM ROOT)
+      # -------------------------
+      - name: Build Docker images
+        run: |
+          chmod +x infrastructure/k8s/build-images.sh
+          ./infrastructure/k8s/build-images.sh
+
+      # -------------------------
+      # 5. Load images into kind (if still using kind)
+      # -------------------------
+      - name: Load images into kind
+        run: |
+          kind load docker-image mountainhub-api-gateway:latest
+          kind load docker-image mountainhub-auth:latest
+          kind load docker-image mountainhub-review:latest
+          kind load docker-image mountainhub-trail:latest
+          kind load docker-image mountainhub-frontend:latest
+
+
+      # -------------------------
+      # 6. Create Kubernetes secret (inject GitHub Secrets)
+      # -------------------------
+      - name: Create Kubernetes secret (inject GitHub Secrets)
+        run: |
+          cat <<EOF > infrastructure/k8s/secrets.yaml
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: mountainhub-secrets
+            namespace: mountainhub
+          type: Opaque
+          stringData:
+            SUPABASE_URL: "${{ secrets.SUPABASE_URL }}"
+            SUPABASE_KEY: "${{ secrets.SUPABASE_KEY }}"
+            SUPABASE_BUCKET_GPX: "gpx-files"
+            SUPABASE_BUCKET_MEDIA: "media-files"
+          EOF
+
+
+      # -------------------------
+      # 7. Apply manifests (RUN FROM ROOT)
+      # -------------------------
+      - name: Deploy Kubernetes manifests
+        run: |
+          chmod +x infrastructure/k8s/apply.sh
+          ./infrastructure/k8s/apply.sh
+
+      # -------------------------
+      # 8. Wait for readiness
+      # -------------------------
+      - name: Wait for deployments
+        run: |
+          kubectl wait --for=condition=available deployment \
+          --all -n mountainhub --timeout=120s
+
+      # -------------------------
+      # 9. Verify cluster
+      # -------------------------
+      - name: Cluster status
+        run: |
+          kubectl get pods -A
+          kubectl get svc -A
+
+      # -------------------------
+      # 10. Test API Gateway
+      # -------------------------
+      - name: Test API Gateway
+        run: |
+          kubectl run test-client \
+            --image=curlimages/curl \
+            --namespace=mountainhub \
+            --rm -i --restart=Never -- \
+            curl --max-time 10 http://api-gateway:8080/health
+
+      # -------------------------
+      # 11. Debug on failure
+      # -------------------------
+      - name: Debug logs
+        if: failure()
+        run: |
+          kubectl get pods -A
+          kubectl logs -l app=api-gateway --tail=100 || true
+
+
+
+

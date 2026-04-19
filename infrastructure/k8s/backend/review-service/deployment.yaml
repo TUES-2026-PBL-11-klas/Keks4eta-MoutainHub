@@ -1,36 +1,44 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api-gateway
+  name: review-service
   namespace: mountainhub
   labels:
-    app: api-gateway
+    app: review-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: api-gateway
+      app: review-service
   template:
     metadata:
       labels:
-        app: api-gateway
+        app: review-service
     spec:
       containers:
-        - name: api-gateway
-          # Build locally: docker build -t mountainhub-api-gateway:local ./backend/api-gateway-service
-          image: mountainhub-api-gateway:local
+        - name: review-service
+          image: mountainhub-review:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8080
+            - containerPort: 5000
           envFrom:
             - configMapRef:
                 name: mountainhub-config
+            - secretRef:
+                name: mountainhub-secrets
           livenessProbe:
             httpGet:
               path: /health
-              port: 8080
+              port: 5000
             initialDelaySeconds: 10
             periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 10
             failureThreshold: 3
           resources:
             requests:
@@ -38,4 +46,4 @@ spec:
               cpu: "100m"
             limits:
               memory: "256Mi"
-              cpu: "300m"
+              cpu: "250m"
