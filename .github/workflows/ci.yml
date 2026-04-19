@@ -282,7 +282,6 @@ jobs:
           EOF
 
 
-
       # -------------------------
       # 7. Apply manifests (RUN FROM ROOT)
       # -------------------------
@@ -313,7 +312,7 @@ jobs:
       - name: Wait for deployments
         run: |
           kubectl wait --for=condition=available deployment \
-          --all -n mountainhub --timeout=30s
+          --all -n mountainhub --timeout=120s
 
       #DEBUG
       - name: Debug Kubernetes state
