@@ -221,33 +221,58 @@ jobs:
   k8s-test:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: infrastructure/k8s
+        
     steps:
       # -------------------------
-      # 1. Checkout code
+      # 1. Checkout
       # -------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
       # -------------------------
-      # 2. Create kind cluster
+      # 2. Setup Docker (needed for build-images.sh)
+      # -------------------------
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+
+      # -------------------------
+      # 3. Create kind cluster
       # -------------------------
       - name: Create Kubernetes cluster
         uses: helm/kind-action@v1
 
       # -------------------------
-      # 3. Verify cluster
+      # 4. Build images
       # -------------------------
-      - name: Cluster info
-        run: kubectl cluster-info
+      - name: Build Docker images
+        run: |
+          chmod +x ./build-images.sh
+          ./build-images.sh
 
       # -------------------------
-      # 4. Apply Kubernetes manifests
+      # 5. Load images into kind (IMPORTANT)
       # -------------------------
-      - name: Deploy application
-        run: kubectl apply -f k8s/
+      - name: Load images into kind cluster
+        run: |
+          kind load docker-image auth-service:latest
+          kind load docker-image user-service:latest
+          kind load docker-image review-service:latest
+          kind load docker-image trail-service:latest
+          kind load docker-image api-gateway:latest
 
       # -------------------------
-      # 5. Wait for all deployments
+      # 6. Deploy Kubernetes manifests
+      # -------------------------
+      - name: Apply Kubernetes manifests
+        run: |
+          chmod +x ./apply-local.sh
+          ./apply-local.sh
+
+      # -------------------------
+      # 7. Wait for deployments
       # -------------------------
       - name: Wait for deployments to be ready
         run: |
@@ -255,15 +280,17 @@ jobs:
           --all --timeout=180s
 
       # -------------------------
-      # 6. Check pods health (extra safety)
+      # 8. Verify cluster state
       # -------------------------
-      - name: Check pod status
-        run: kubectl get pods -A
+      - name: Check pods and services
+        run: |
+          kubectl get pods -A
+          kubectl get svc -A
 
       # -------------------------
-      # 7. Test API Gateway internally (BEST PRACTICE)
+      # 9. Test API Gateway (in-cluster test)
       # -------------------------
-      - name: Test API Gateway (cluster internal)
+      - name: Test API Gateway
         run: |
           kubectl run test-client \
             --image=curlimages/curl \
@@ -271,13 +298,14 @@ jobs:
             curl http://api-gateway
 
       # -------------------------
-      # 8. Optional: debug on failure
+      # 10. Debug on failure
       # -------------------------
-      - name: Debug cluster state
+      - name: Debug logs
         if: failure()
         run: |
           kubectl get pods -A
           kubectl describe pods -A
-          kubectl logs -l app=api-gateway --tail=50 || true
+          kubectl logs -l app=api-gateway --tail=100 || true
+
 
 
