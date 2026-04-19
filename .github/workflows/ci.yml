@@ -215,3 +215,69 @@ jobs:
       - name: Show logs on failure
         if: failure()
         run: cat server.log
+  # -------------------------
+  # KUBERNETES INTEGRATION TEST
+  # -------------------------
+  k8s-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # -------------------------
+      # 1. Checkout code
+      # -------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -------------------------
+      # 2. Create kind cluster
+      # -------------------------
+      - name: Create Kubernetes cluster
+        uses: helm/kind-action@v1
+
+      # -------------------------
+      # 3. Verify cluster
+      # -------------------------
+      - name: Cluster info
+        run: kubectl cluster-info
+
+      # -------------------------
+      # 4. Apply Kubernetes manifests
+      # -------------------------
+      - name: Deploy application
+        run: kubectl apply -f k8s/
+
+      # -------------------------
+      # 5. Wait for all deployments
+      # -------------------------
+      - name: Wait for deployments to be ready
+        run: |
+          kubectl wait --for=condition=available deployment \
+          --all --timeout=180s
+
+      # -------------------------
+      # 6. Check pods health (extra safety)
+      # -------------------------
+      - name: Check pod status
+        run: kubectl get pods -A
+
+      # -------------------------
+      # 7. Test API Gateway internally (BEST PRACTICE)
+      # -------------------------
+      - name: Test API Gateway (cluster internal)
+        run: |
+          kubectl run test-client \
+            --image=curlimages/curl \
+            --rm -i --restart=Never -- \
+            curl http://api-gateway
+
+      # -------------------------
+      # 8. Optional: debug on failure
+      # -------------------------
+      - name: Debug cluster state
+        if: failure()
+        run: |
+          kubectl get pods -A
+          kubectl describe pods -A
+          kubectl logs -l app=api-gateway --tail=50 || true
+
+
