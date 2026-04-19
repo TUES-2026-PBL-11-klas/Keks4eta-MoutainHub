@@ -8,6 +8,9 @@ on:
 
 env:
   NAMESPACE: mountainhub
+  REGISTRY_HOST: ${{ secrets.GCP_ARTIFACT_REGISTRY_HOST }}
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REPOSITORY: ${{ secrets.GCP_ARTIFACT_REPOSITORY }}
 
 jobs:
   deploy:
@@ -15,10 +18,17 @@ jobs:
     permissions:
       contents: read
       id-token: write
+
     steps:
+      # -------------------------
+      # 1. Checkout
+      # -------------------------
       - name: Checkout
         uses: actions/checkout@v4
 
+      # -------------------------
+      # 2. Auth to Google Cloud
+      # -------------------------
       - name: Auth to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -31,28 +41,34 @@ jobs:
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ secrets.GCP_ARTIFACT_REGISTRY_HOST }} --quiet
 
-      - name: Build and push backend image
-        env:
-          REGISTRY_HOST: ${{ secrets.GCP_ARTIFACT_REGISTRY_HOST }}
-          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-          REPOSITORY: ${{ secrets.GCP_ARTIFACT_REPOSITORY }}
+      # -------------------------
+      # 3. Build & push all images
+      # -------------------------
+      - name: Build and push images
         run: |
-          BACKEND_IMAGE="$REGISTRY_HOST/$PROJECT_ID/$REPOSITORY/backend:${GITHUB_SHA}"
-          docker build -t "$BACKEND_IMAGE" ./backend
-          docker push "$BACKEND_IMAGE"
-          echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> $GITHUB_ENV
+          TAG="${GITHUB_SHA}"
+          BASE="${REGISTRY_HOST}/${PROJECT_ID}/${REPOSITORY}"
 
-      - name: Build and push frontend image
-        env:
-          REGISTRY_HOST: ${{ secrets.GCP_ARTIFACT_REGISTRY_HOST }}
-          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-          REPOSITORY: ${{ secrets.GCP_ARTIFACT_REPOSITORY }}
-        run: |
-          FRONTEND_IMAGE="$REGISTRY_HOST/$PROJECT_ID/$REPOSITORY/frontend:${GITHUB_SHA}"
-          docker build -t "$FRONTEND_IMAGE" ./frontend
-          docker push "$FRONTEND_IMAGE"
-          echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> $GITHUB_ENV
+          build_push() {
+            local name=$1
+            local context=$2
+            docker build -t "${BASE}/${name}:${TAG}" -t "${BASE}/${name}:latest" "${context}"
+            docker push "${BASE}/${name}:${TAG}"
+            docker push "${BASE}/${name}:latest"
+          }
 
+          build_push mountainhub-api-gateway ./backend/api-gateway-service
+          build_push mountainhub-auth        ./backend/user-service
+          build_push mountainhub-review      ./backend/review-service
+          build_push mountainhub-trail       ./backend/trail-service
+          build_push mountainhub-media       ./backend/media-service
+          build_push mountainhub-frontend    ./frontend
+
+          echo "IMAGE_TAG=${TAG}" >> $GITHUB_ENV
+
+      # -------------------------
+      # 4. Get GKE credentials
+      # -------------------------
       - name: Fetch GKE credentials
         uses: google-github-actions/get-gke-credentials@v2
         with:
@@ -60,10 +76,24 @@ jobs:
           location: ${{ secrets.GKE_CLUSTER_LOCATION }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      - name: Apply namespace and base config
+      # -------------------------
+      # 5. Enable Cloud Logging & Monitoring
+      # -------------------------
+      - name: Enable GKE logging and monitoring
         run: |
-          kubectl apply -f k8s/namespace.yaml
-          kubectl apply -f k8s/configmap.yaml
+          gcloud container clusters update ${{ secrets.GKE_CLUSTER_NAME }} \
+            --zone ${{ secrets.GKE_CLUSTER_LOCATION }} \
+            --logging=SYSTEM,WORKLOAD \
+            --monitoring=SYSTEM \
+            --quiet
+
+      # -------------------------
+      # 6. Apply base manifests
+      # -------------------------
+      - name: Apply namespace and config
+        run: |
+          kubectl apply -f infrastructure/k8s/namespace.yaml
+          kubectl apply -f infrastructure/k8s/configmap.yaml
 
       - name: Create or update app secrets
         env:
@@ -80,20 +110,92 @@ jobs:
             --from-literal=SUPABASE_BUCKET_MEDIA="$SUPABASE_BUCKET_MEDIA" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Render deployment manifests with image tags
+      # -------------------------
+      # 7. Apply services
+      # -------------------------
+      - name: Apply services
         run: |
-          sed "s|BACKEND_IMAGE_PLACEHOLDER|$BACKEND_IMAGE|g" k8s/backend/deployment.yaml > k8s/backend/deployment.rendered.yaml
-          sed "s|FRONTEND_IMAGE_PLACEHOLDER|$FRONTEND_IMAGE|g" k8s/frontend/deployment.yaml > k8s/frontend/deployment.rendered.yaml
+          kubectl apply -f infrastructure/k8s/backend/api-gateway-service/service.yaml
+          kubectl apply -f infrastructure/k8s/backend/auth-service/service.yaml
+          kubectl apply -f infrastructure/k8s/backend/review-service/service.yaml
+          kubectl apply -f infrastructure/k8s/backend/trail-service/service.yaml
+          kubectl apply -f infrastructure/k8s/backend/media-service/service.yaml
+          kubectl apply -f infrastructure/k8s/frontend/service.yaml
 
-      - name: Deploy workloads and services
+      # -------------------------
+      # 8. Apply deployments
+      # -------------------------
+      - name: Apply deployments
         run: |
-          kubectl apply -f k8s/backend/deployment.rendered.yaml
-          kubectl apply -f k8s/backend/service.yaml
-          kubectl apply -f k8s/frontend/deployment.rendered.yaml
-          kubectl apply -f k8s/frontend/service.yaml
-          kubectl apply -f k8s/ingress.yaml
+          kubectl apply -f infrastructure/k8s/backend/api-gateway-service/deployment.yaml
+          kubectl apply -f infrastructure/k8s/backend/auth-service/deployment.yaml
+          kubectl apply -f infrastructure/k8s/backend/review-service/deployment.yaml
+          kubectl apply -f infrastructure/k8s/backend/trail-service/deployment.yaml
+          kubectl apply -f infrastructure/k8s/backend/media-service/deployment.yaml
+          kubectl apply -f infrastructure/k8s/frontend/deployment.yaml
 
-      - name: Wait for rollout
+      # -------------------------
+      # 9. Update image tags
+      # -------------------------
+      - name: Update image tags in deployments
         run: |
-          kubectl rollout status deployment/backend -n "$NAMESPACE"
-          kubectl rollout status deployment/frontend -n "$NAMESPACE"
+          BASE="${REGISTRY_HOST}/${PROJECT_ID}/${REPOSITORY}"
+          TAG="${IMAGE_TAG}"
+
+          kubectl set image deployment/api-gateway  api-gateway="${BASE}/mountainhub-api-gateway:${TAG}" -n "$NAMESPACE"
+          kubectl set image deployment/auth-service  auth-service="${BASE}/mountainhub-auth:${TAG}"       -n "$NAMESPACE"
+          kubectl set image deployment/review-service review-service="${BASE}/mountainhub-review:${TAG}" -n "$NAMESPACE"
+          kubectl set image deployment/trail-service  trail-service="${BASE}/mountainhub-trail:${TAG}"   -n "$NAMESPACE"
+          kubectl set image deployment/media-service  media-service="${BASE}/mountainhub-media:${TAG}"   -n "$NAMESPACE"
+          kubectl set image deployment/frontend       frontend="${BASE}/mountainhub-frontend:${TAG}"     -n "$NAMESPACE"
+
+      # -------------------------
+      # 10. Deploy Prometheus + Grafana
+      # -------------------------
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      - name: Deploy monitoring (Prometheus + Grafana)
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+          helm upgrade --install kube-prometheus-stack \
+            prometheus-community/kube-prometheus-stack \
+            --namespace monitoring \
+            --set grafana.adminPassword="${{ secrets.GRAFANA_PASSWORD }}" \
+            --set grafana.service.type=LoadBalancer \
+            --set prometheus.prometheusSpec.retention=7d \
+            --timeout=5m \
+            --wait
+
+      # -------------------------
+      # 11. Wait for rollouts
+      # -------------------------
+      - name: Wait for rollouts
+        run: |
+          kubectl rollout status deployment/api-gateway   -n "$NAMESPACE" --timeout=120s
+          kubectl rollout status deployment/auth-service  -n "$NAMESPACE" --timeout=120s
+          kubectl rollout status deployment/review-service -n "$NAMESPACE" --timeout=120s
+          kubectl rollout status deployment/trail-service  -n "$NAMESPACE" --timeout=120s
+          kubectl rollout status deployment/media-service  -n "$NAMESPACE" --timeout=120s
+          kubectl rollout status deployment/frontend       -n "$NAMESPACE" --timeout=120s
+
+      # -------------------------
+      # 12. Cluster summary
+      # -------------------------
+      - name: Cluster summary
+        run: |
+          kubectl get pods -n "$NAMESPACE"
+          kubectl get svc  -n "$NAMESPACE"
+          kubectl get pods -n monitoring
+
+      # -------------------------
+      # 13. Debug on failure
+      # -------------------------
+      - name: Debug on failure
+        if: failure()
+        run: |
+          kubectl get pods -A
+          kubectl describe pods -n "$NAMESPACE" | tail -60
+          kubectl logs -l app=api-gateway -n "$NAMESPACE" --tail=50 || true

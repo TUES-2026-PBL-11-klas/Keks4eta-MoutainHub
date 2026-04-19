@@ -17,3 +17,4 @@ data:
   REVIEW_SERVICE_URL: "http://review-service:5000"
   TRAIL_SERVICE_URL: "http://trail-service:5000"
   MEDIA_SERVICE_URL: "http://media-service:5000"
+  LOG_FORMAT: "json"

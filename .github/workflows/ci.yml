@@ -334,6 +334,41 @@ jobs:
           kubectl get pods -A
           kubectl logs -l app=api-gateway --tail=100 || true
 
+  # -------------------------
+  # DOCKER HUB PUSH
+  # -------------------------
+  docker-push:
+    name: Push images to Docker Hub
+    runs-on: ubuntu-latest
+    needs: [test-services, api-gateway]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Build and push all images
+        run: |
+          HUB="${{ secrets.DOCKERHUB_USERNAME }}"
+          SHA="${{ github.sha }}"
+
+          build_push() {
+            local name=$1
+            local context=$2
+            docker build -t "${HUB}/${name}:latest" -t "${HUB}/${name}:${SHA}" "${context}"
+            docker push "${HUB}/${name}:latest"
+            docker push "${HUB}/${name}:${SHA}"
+          }
+
+          build_push mountainhub-api-gateway ./backend/api-gateway-service
+          build_push mountainhub-auth        ./backend/user-service
+          build_push mountainhub-review      ./backend/review-service
+          build_push mountainhub-trail       ./backend/trail-service
+          build_push mountainhub-media       ./backend/media-service
+          build_push mountainhub-frontend    ./frontend

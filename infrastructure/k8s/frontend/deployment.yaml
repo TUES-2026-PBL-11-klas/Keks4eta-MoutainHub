@@ -6,7 +6,12 @@ metadata:
   labels:
     app: frontend
 spec:
-  replicas: 1
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: frontend
@@ -18,7 +23,7 @@ spec:
       containers:
         - name: frontend
           image: mountainhub-frontend:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
           livenessProbe:
