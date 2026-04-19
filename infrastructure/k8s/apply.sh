@@ -3,7 +3,6 @@ set -e
 echo "==> Applying manifests..."
 kubectl apply -f infrastructure/k8s/namespace.yaml
 kubectl apply -f infrastructure/k8s/configmap.yaml
-kubectl apply -f infrastructure/k8s/secret.yaml 
 kubectl apply -f infrastructure/k8s/backend/api-gateway-service/service.yaml
 kubectl apply -f infrastructure/k8s/backend/api-gateway-service/deployment.yaml
 kubectl apply -f infrastructure/k8s/backend/auth-service/service.yaml

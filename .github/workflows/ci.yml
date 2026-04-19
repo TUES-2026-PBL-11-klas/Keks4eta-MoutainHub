@@ -262,15 +262,36 @@ jobs:
           kind load docker-image mountainhub-trail:latest
 
 
+      # -------------------------
+      # 6. Create Kubernetes secret (inject GitHub Secrets)
+      # -------------------------
+      - name: Create Kubernetes secret (inject GitHub Secrets)
+        run: |
+          cat <<EOF > infrastructure/k8s/secrets.yaml
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: mountainhub-secrets
+            namespace: mountainhub
+          type: Opaque
+          stringData:
+            SUPABASE_URL: "${{ secrets.SUPABASE_URL }}"
+            SUPABASE_KEY: "${{ secrets.SUPABASE_KEY }}"
+            SUPABASE_BUCKET_GPX: "gpx-files"
+            SUPABASE_BUCKET_MEDIA: "media-files"
+          EOF
+
 
 
       # -------------------------
-      # 6. Apply manifests (RUN FROM ROOT)
+      # 7. Apply manifests (RUN FROM ROOT)
       # -------------------------
       - name: Deploy Kubernetes manifests
         run: |
           chmod +x infrastructure/k8s/apply.sh
           ./infrastructure/k8s/apply.sh
+
+      #DEBUG
       - name: Debug Kubernetes state
         if: always()
         run: |
@@ -287,13 +308,14 @@ jobs:
           kubectl get events -n mountainhub --sort-by=.metadata.creationTimestamp
 
       # -------------------------
-      # 7. Wait for readiness
+      # 8. Wait for readiness
       # -------------------------
       - name: Wait for deployments
         run: |
           kubectl wait --for=condition=available deployment \
           --all -n mountainhub --timeout=30s
 
+      #DEBUG
       - name: Debug Kubernetes state
         if: always()
         run: |
@@ -311,7 +333,7 @@ jobs:
           
 
       # -------------------------
-      # 8. Verify cluster
+      # 9. Verify cluster
       # -------------------------
       - name: Cluster status
         run: |
@@ -319,7 +341,7 @@ jobs:
           kubectl get svc -A
 
       # -------------------------
-      # 9. Test API Gateway
+      # 10. Test API Gateway
       # -------------------------
       - name: Test API Gateway
         run: |
@@ -329,7 +351,7 @@ jobs:
             curl http://api-gateway
 
       # -------------------------
-      # 10. Debug on failure
+      # 11. Debug on failure
       # -------------------------
       - name: Debug logs
         if: failure()
