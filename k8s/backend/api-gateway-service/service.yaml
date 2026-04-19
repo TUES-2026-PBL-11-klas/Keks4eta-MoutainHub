@@ -1,13 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend
+  name: api-gateway
   namespace: mountainhub
+  labels:
+    app: api-gateway
 spec:
   selector:
-    app: backend
+    app: api-gateway
+  type: LoadBalancer
   ports:
     - name: http
       port: 8080
       targetPort: 8080
-      protocol: TCP

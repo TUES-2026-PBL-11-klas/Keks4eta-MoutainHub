@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD ["python", "run.py"]
+CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:8080", "run:app"]
