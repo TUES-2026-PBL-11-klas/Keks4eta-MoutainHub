@@ -18,7 +18,7 @@ spec:
       containers:
         - name: frontend
           # Build locally: docker build -t mountainhub-frontend:local ./frontend
-          image: mountainhub-frontend:local
+          image: mountainhub-frontend:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
