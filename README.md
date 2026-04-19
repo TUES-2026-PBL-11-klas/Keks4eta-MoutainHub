@@ -1,113 +1,272 @@
 # Mountain Hub
 
-Mountain Hub is a platform for hikers, MTB riders, climbers, and mountain enthusiasts.
+Mountain Hub is a platform for hikers, MTB riders, and ski enthusiasts to discover, share, and track mountain trails. Users can browse and upload GPX routes across three activity categories — hiking, mountain biking, and skiing — and leave reviews for trails.
 
-## Current stack
-- Frontend: Expo (React Native + Web export)
-- Backend: Flask
-- Storage: Supabase
-- Deployment: Docker + Kubernetes (GKE)
-- CI/CD: GitHub Actions
+## Architecture
 
-## Project structure
-- `frontend/` - Expo app, exported as static web for containerized deployment
-- `backend/` - Flask API service
-- `k8s/` - Kubernetes manifests
-- `.github/workflows/` - CI/CD pipelines
+```
+┌─────────────────────────────────────────────────────┐
+│                     Client (Browser)                │
+│              Expo Web Export (React Native)         │
+└─────────────────────┬───────────────────────────────┘
+                      │ HTTP
+┌─────────────────────▼───────────────────────────────┐
+│                  API Gateway (Flask)                │
+│                    /auth  /trails                   │
+│                    /reviews  /media                 │
+└────┬──────────────┬─────────────┬───────────────────┘
+     │              │             │
+┌────▼────┐   ┌─────▼────┐  ┌─────▼────┐  ┌──────────┐
+│  User   │   │  Trail   │  │  Review  │  │  Media   │
+│ Service │   │ Service  │  │ Service  │  │ Service  │
+│ (Flask) │   │ (Flask)  │  │ (Flask)  │  │(planned) │
+└────┬────┘   └─────┬────┘  └─────┬────┘  └──────────┘
+     └──────────────┴─────────────┘
+                      │
+          ┌───────────▼───────────┐
+          │        Supabase       │
+          │  Auth · DB · Storage  │
+          └───────────────────────┘
+```
 
-## Local development
+**Deployment:** Local Kubernetes (via Terraform) → Google Cloud (GKE, in progress)
+
+## Tech Stack
+
+| Layer | Technology | Version |
+|---|---|---|
+| Frontend | Expo (React Native, web export only) | — |
+| Backend | Flask | 3.1.3 |
+| Language | Python | 3.11 |
+| Auth | Supabase Auth | — |
+| Database | Supabase (PostgreSQL) | — |
+| Storage | Supabase Storage (GPX + media buckets) | — |
+| Infrastructure | Kubernetes + Terraform | — |
+| CI/CD | GitHub Actions | — |
+| Container Registry | Google Artifact Registry | — |
+
+## Project Structure
+
+```
+mountain-hub/
+├── frontend/                    # Expo app, exported as static web
+├── backend/
+│   ├── api-gateway-service/     # API Gateway — proxies to internal services
+│   ├── user-service/            # Auth & user management
+│   ├── trail-service/           # Trail CRUD & GPX routes
+│   ├── review-service/          # Trail reviews
+│   └── media-service/           # Media uploads (planned)
+├── infrastructure/
+│   ├── k8s/                     # Kubernetes manifests
+│   │   ├── namespace.yaml
+│   │   ├── configmap.yaml
+│   │   ├── backend/
+│   │   └── frontend/
+│   └── terraform/               # Infrastructure as code
+├── docker-compose.yml
+└── .github/workflows/           # CI/CD pipelines
+```
+
+## Local Development
+
+### Prerequisites
+
+- Python 3.11
+- Node.js (for Expo frontend)
+- A Supabase project with the required buckets (`gpx`, `media`)
+
+### Environment Variables
+
+Create a `.env` file in each service directory (or set them in your shell):
+
+```env
+SUPABASE_URL=https://<your-project>.supabase.co
+SUPABASE_KEY=<your-anon-or-service-key>
+SUPABASE_BUCKET_GPX=gpx
+SUPABASE_BUCKET_MEDIA=media
+```
 
 ### Frontend
+
 ```bash
 cd frontend
 npm install
 npm run start
 ```
 
-### Backend
+For a static web export:
+
 ```bash
-cd backend
+npx expo export --platform web
+```
+
+### Backend Services
+
+Each service runs independently. Example for the gateway:
+
+```bash
+cd backend/api-gateway-service
 pip install -r requirements.txt
 python app.py
 ```
 
-Backend health check:
+Repeat for `user-service`, `trail-service`, and `review-service`.
+
+Health check:
+
 ```bash
 curl http://localhost:8080/health
 ```
 
-## Docker build and run
+## Docker
 
-### Backend image
-```bash
-docker build -t mountainhub-backend:local ./backend
-docker run --rm -p 8080:8080 mountainhub-backend:local
-```
+### Build & run individual images
 
-### Frontend web image
 ```bash
+# Backend (gateway example)
+docker build -t mountainhub-gateway:local ./backend/api-gateway-service
+docker run --rm -p 8080:8080 mountainhub-gateway:local
+
+# Frontend
 docker build -t mountainhub-frontend:local ./frontend
 docker run --rm -p 3000:80 mountainhub-frontend:local
 ```
 
-Open http://localhost:3000 for the frontend container.
+Open http://localhost:3000 for the frontend.
 
-## Kubernetes manifests
+## Kubernetes (Local via Terraform)
 
-Apply all manifests:
+Local development uses a local Kubernetes cluster managed by Terraform.
+
 ```bash
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/configmap.yaml
-kubectl apply -f k8s/backend/service.yaml
-kubectl apply -f k8s/frontend/service.yaml
-kubectl apply -f k8s/ingress.yaml
+# Provision local cluster
+cd infrastructure/terraform
+terraform init
+terraform apply
+
+# Apply manifests
+kubectl apply -f infrastructure/k8s/namespace.yaml
+kubectl apply -f infrastructure/k8s/configmap.yaml
+kubectl apply -f infrastructure/k8s/backend/api-gateway-service/service.yaml
+kubectl apply -f infrastructure/k8s/backend/auth-service/service.yaml
+kubectl apply -f infrastructure/k8s/backend/review-service/service.yaml
+kubectl apply -f infrastructure/k8s/backend/trail-service/service.yaml
+kubectl apply -f infrastructure/k8s/frontend/service.yaml
 ```
 
-Deployments use placeholders:
-- `BACKEND_IMAGE_PLACEHOLDER` in `k8s/backend/deployment.yaml`
-- `FRONTEND_IMAGE_PLACEHOLDER` in `k8s/frontend/deployment.yaml`
+Deployment manifests use image placeholders replaced by CI/CD:
+- `BACKEND_IMAGE_PLACEHOLDER` → `infrastructure/k8s/backend/<service>/deployment.yaml`
+- `FRONTEND_IMAGE_PLACEHOLDER` → `infrastructure/k8s/frontend/deployment.yaml`
 
-In CI/CD, these are replaced with Artifact Registry image tags per commit.
-
-## GitHub Actions
+## CI/CD (GitHub Actions)
 
 ### CI (`.github/workflows/ci.yml`)
-- Runs on PRs and pushes to `main`
+
+Runs on PRs and pushes to `main`:
 - Frontend: `npm ci`, `npm run lint`, web export build
-- Backend: `ruff check`, start Flask app, probe `/health`
+- Backend: `ruff check`, Flask startup, `/health` probe
 
 ### CD (`.github/workflows/cd-gke.yml`)
-- Runs on pushes to `main` (and manual dispatch)
-- Builds backend and frontend Docker images
-- Pushes images to Artifact Registry
-- Applies Kubernetes manifests to GKE
+
+Runs on pushes to `main` (and manual dispatch):
+- Builds and pushes Docker images to Google Artifact Registry
+- Applies Kubernetes manifests
 - Updates `mountainhub-secrets` from GitHub Secrets
 - Waits for rollout success
 
-## Required GitHub secrets for GKE CD
+### Required GitHub Secrets
 
-Set these in repository settings:
+| Secret | Description |
+|---|---|
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Workload Identity Federation provider |
+| `GCP_SERVICE_ACCOUNT` | GCP service account email |
+| `GCP_PROJECT_ID` | Google Cloud project ID |
+| `GCP_ARTIFACT_REGISTRY_HOST` | e.g. `europe-west1-docker.pkg.dev` |
+| `GCP_ARTIFACT_REPOSITORY` | Artifact Registry repo name |
+| `GKE_CLUSTER_NAME` | GKE cluster name |
+| `GKE_CLUSTER_LOCATION` | Zone or region |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_KEY` | Supabase API key |
+| `SUPABASE_BUCKET_GPX` | GPX storage bucket name |
+| `SUPABASE_BUCKET_MEDIA` | Media storage bucket name |
 
-- `GCP_WORKLOAD_IDENTITY_PROVIDER`
-- `GCP_SERVICE_ACCOUNT`
-- `GCP_PROJECT_ID`
-- `GCP_ARTIFACT_REGISTRY_HOST` (example: `europe-west1-docker.pkg.dev`)
-- `GCP_ARTIFACT_REPOSITORY` (Artifact Registry repo name)
-- `GKE_CLUSTER_NAME`
-- `GKE_CLUSTER_LOCATION` (zone or region)
-- `SUPABASE_URL`
-- `SUPABASE_KEY`
-- `SUPABASE_BUCKET_GPX`
-- `SUPABASE_BUCKET_MEDIA`
+## API Reference
 
-## End-to-end deploy steps on Google Cloud
+All requests go through the **API Gateway** (default: `http://localhost:8080`). Authenticated endpoints require:
 
-1. Create Artifact Registry repository for Docker images.
+```
+Authorization: Bearer <supabase-access-token>
+```
+
+---
+
+### Gateway
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/health` | No | Health check |
+| `ANY` | `/auth[/<path>]` | — | Proxy → User Service |
+| `ANY` | `/reviews[/<path>]` | — | Proxy → Review Service |
+| `ANY` | `/media[/<path>]` | — | Proxy → Media Service |
+| `ANY` | `/trails[/<path>]` | — | Proxy → Trail Service |
+
+---
+
+### User Service (`/auth/...`)
+
+| Method | Path | Auth | Description | Body |
+|---|---|---|---|---|
+| `GET` | `/health` | No | Health check | — |
+| `GET` | `/ready` | No | DB readiness | — |
+| `POST` | `/login` | No | Login | `{ email, password }` |
+| `POST` | `/signup` | No | Register | `{ email, password, display_name? }` |
+| `POST` | `/logout` | Yes | Logout | — |
+| `GET` | `/user/<user_id>` | No | Get user by ID | — |
+
+---
+
+### Trail Service (`/trails/...`)
+
+| Method | Path | Auth | Description | Body / Params |
+|---|---|---|---|---|
+| `GET` | `/health` | No | Health check | — |
+| `GET` | `/ready` | No | DB readiness | — |
+| `POST` | `/` | Yes | Create trail | `{ category, name, route (GeoJSON), difficulty?, description?, distance_km?, elevation_gain_m?, status? }` |
+| `GET` | `/` | No | List trails | `?category, ?status` |
+| `GET` | `/<trail_id>` | No | Get trail by ID | — |
+| `GET` | `/user/<user_id>` | No | Trails by user | `?category, ?status` |
+
+---
+
+### Review Service (`/reviews/...`)
+
+| Method | Path | Auth | Description | Body / Params |
+|---|---|---|---|---|
+| `GET` | `/health` | No | Health check | — |
+| `GET` | `/ready` | No | DB readiness | — |
+| `POST` | `/` | Yes | Create review | `{ trail_id, name, rating (1–5), description? }` |
+| `GET` | `/` | No | List all reviews | `?since, ?size, ?page` |
+| `GET` | `/trail/<trail_id>` | No | Reviews for trail | `?since, ?size, ?page` |
+| `GET` | `/user/<user_id>` | No | Reviews by user | `?since, ?size, ?page` |
+| `GET` | `/category/<category>` | No | Reviews by category | `?since, ?size, ?page` |
+
+---
+
+### Media Service
+
+> 🚧 Not yet implemented.
+
+---
+
+> **API documentation (OpenAPI/Swagger):** planned, not yet available.
+
+## GCP Deployment (In Progress)
+
+Once GKE is provisioned:
+
+1. Create an Artifact Registry repository for Docker images.
 2. Create or select a GKE cluster.
-3. Create a Google service account with:
-   - Artifact Registry Writer
-   - Kubernetes Engine Developer (or appropriate deploy role)
-4. Configure Workload Identity Federation between GitHub and GCP.
-5. Add all required GitHub secrets listed above.
-6. Point DNS for `mountainhub.example.com` to the Ingress external IP.
-7. Push to `main` to trigger CD and deploy both services.
+3. Create a service account with **Artifact Registry Writer** and **Kubernetes Engine Developer** roles.
+4. Configure Workload Identity Federation between GitHub Actions and GCP.
+5. Add all required GitHub Secrets listed above.
+6. Push to `main` to trigger the CD pipeline.
