@@ -278,7 +278,8 @@ jobs:
       - name: Wait for deployments
         run: |
           kubectl wait --for=condition=available deployment \
-          --all --timeout=180s
+          --all -n mountainhub --timeout=180s
+
 
       # -------------------------
       # 8. Verify cluster
