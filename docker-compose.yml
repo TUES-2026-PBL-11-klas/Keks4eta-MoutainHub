@@ -51,3 +51,16 @@ services:
       - SUPABASE_KEY=${SUPABASE_KEY}
       - FLASK_ENV=development
       - FLASK_DEBUG=1
+
+  media-service:
+    build: ./backend/media-service
+    expose:
+      - "5000"
+    volumes:
+      - ./backend/media-service:/app
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_BUCKET=${SUPABASE_BUCKET_MEDIA}
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
