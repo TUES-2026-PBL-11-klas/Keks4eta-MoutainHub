@@ -25,8 +25,8 @@ def login():
 
     try:
         response = current_app.extensions["supabase_client"].auth.sign_in_with_password({"email": email, "password": password})
-    except Exception as e:
-        return jsonify({"message": str(e)}), 400
+    except Exception:
+        return jsonify({"message": "Credentials incorrect"}), 401
 
 
     return jsonify({
@@ -48,8 +48,13 @@ def signup():
     try:
         response = current_app.extensions["supabase_client"].auth.sign_up({"email": email, "password": password, "options": {"data": {"display_name": display_name}}})
     except Exception as e:
-        return jsonify({"message": str(e)}), 400
-    
+        err = str(e).lower()
+        if "password" in err and any(k in err for k in ("short", "length", "characters", "weak", "least")):
+            return jsonify({"message": "Password too short"}), 400
+        if any(k in err for k in ("already", "registered", "exists", "taken")):
+            return jsonify({"message": "Email already in use"}), 400
+        return jsonify({"message": "Signup failed"}), 400
+
     return jsonify({
         "message": "Signup successful",
         "display_name": response.user.user_metadata.get("display_name", "")
