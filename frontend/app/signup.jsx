@@ -19,6 +19,8 @@ import LineBackground from "../assets/images/group-R5.png";
 import LogoMark from "../assets/images/logo.svg";
 import LogoText from "../assets/images/logotext.svg";
 import { useSignup } from "../hooks/api";
+import { GoogleAuthButton } from "../components/GoogleAuthButton";
+import { useToast } from "../components/ui/Toast";
 
 const COLORS = {
   green: "#00DF56",
@@ -47,8 +49,9 @@ export default function SignupScreen() {
     confirmPassword: "",
   });
   const { signup, loading, error } = useSignup();
+  const toast = useToast();
 
-  const [acceptTerms, setAcceptTerms] = useState(true);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formError, setFormError] = useState("");
@@ -212,11 +215,27 @@ export default function SignupScreen() {
                 if (!acceptTerms)               { setFormError("Please accept the terms.");             return; }
                 const displayName = [form.name, form.surname].filter(Boolean).join(" ") || undefined;
                 const result = await signup({ email: form.email.trim(), password: form.password, display_name: displayName });
-                if (result) router.replace("/login");
+                if (result) {
+                  toast.success("Account created — please log in.");
+                  router.replace("/login");
+                }
               }}
             >
               <Text style={styles.primaryButtonText}>{loading ? "Signing up…" : "Sign Up"}</Text>
             </Pressable>
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <View style={styles.googleSlot}>
+              <GoogleAuthButton
+                mode="signup"
+                onError={(msg) => toast.error(msg)}
+              />
+            </View>
 
             <View style={styles.footerRow}>
               <Text style={styles.footerText}>Already have an account? </Text>
@@ -400,6 +419,28 @@ function createStyles(isCompact) {
       color: COLORS.primaryText,
       fontSize: isCompact ? 14 : 16,
       fontWeight: "800",
+    },
+    dividerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginVertical: 10,
+      gap: 8,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: COLORS.blue,
+      opacity: 0.4,
+    },
+    dividerText: {
+      color: COLORS.mutedText,
+      fontSize: isCompact ? 13 : 15,
+      fontWeight: "600",
+    },
+    googleSlot: {
+      alignSelf: "center",
+      width: isCompact ? "100%" : 290,
+      marginBottom: 10,
     },
   });
 }

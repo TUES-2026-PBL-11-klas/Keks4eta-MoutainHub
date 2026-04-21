@@ -4,6 +4,7 @@ const AUTH_KEY         = "mh:isLoggedIn";
 const TOKEN_KEY        = "mh:accessToken";
 const DISPLAY_NAME_KEY = "mh:displayName";
 const USER_ID_KEY      = "mh:userId";
+const AVATAR_URL_KEY   = "mh:avatarUrl";
 
 export async function setLoggedIn(value: boolean) {
   await AsyncStorage.setItem(AUTH_KEY, value ? "1" : "0");
@@ -38,12 +39,24 @@ export async function getUserId(): Promise<string | null> {
   return AsyncStorage.getItem(USER_ID_KEY);
 }
 
+export async function setAvatarUrl(url: string | null) {
+  if (url) {
+    await AsyncStorage.setItem(AVATAR_URL_KEY, url);
+  } else {
+    await AsyncStorage.removeItem(AVATAR_URL_KEY);
+  }
+}
+
+export async function getAvatarUrl(): Promise<string | null> {
+  return AsyncStorage.getItem(AVATAR_URL_KEY);
+}
+
 export async function logout() {
   await Promise.all([
     AsyncStorage.removeItem(AUTH_KEY),
     AsyncStorage.removeItem(TOKEN_KEY),
     AsyncStorage.removeItem(DISPLAY_NAME_KEY),
     AsyncStorage.removeItem(USER_ID_KEY),
+    AsyncStorage.removeItem(AVATAR_URL_KEY),
   ]);
 }
-

@@ -14,11 +14,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, usePathname, useRouter } from "expo-router";
 import { Image } from "expo-image";
-import { isLoggedIn } from "@/lib/auth";
 
 import LineBackground from "@/assets/images/group-R5.svg";
 import Map from "@/components/Map";
 import { useCategoryReviews } from "@/hooks/api";
+import { useAuth } from "@/lib/auth-context";
+import { ProfileMenu } from "@/components/ProfileMenu";
 
 const COLORS = {
   green: "#00DF56",
@@ -49,9 +50,7 @@ export default function HomeConceptScreen() {
   const scrollRef = useRef<ScrollView | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [authed, setAuthed] = useState(false);
-
-  useEffect(() => { isLoggedIn().then(setAuthed); }, []);
+  const { isAuthed: authed } = useAuth();
 
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
 
@@ -172,11 +171,7 @@ export default function HomeConceptScreen() {
                   </Pressable>
                 )}
 
-                <Pressable
-                  style={styles.profileDot}
-                  onPress={() => router.push("/profile")}
-                  hitSlop={8}
-                />
+                <ProfileMenu size={isCompact ? 32 : 38} />
               </View>
             </View>
 

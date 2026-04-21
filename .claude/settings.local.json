@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gcloud beta services identity create *)",
+      "Bash(gcloud iam service-accounts list *)",
+      "Bash(gcloud services list *)"
+    ]
+  }
+}

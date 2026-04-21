@@ -18,6 +18,7 @@ import { Image } from "expo-image";
 import LineBackground from "@/assets/images/group-R5.svg";
 import { isLoggedIn, logout, getToken, getUserId, setUserId } from "@/lib/auth";
 import { useLogout, useUser } from "@/hooks/api";
+import { ProfileMenu } from "@/components/ProfileMenu";
 
 const COLORS = {
   green: "#00DF56",
@@ -167,11 +168,7 @@ export default function ProfileScreen() {
               <Pressable style={styles.iconButton} onPress={refresh} hitSlop={8}>
                 <Ionicons name="search-outline" size={20} color={COLORS.dark} />
               </Pressable>
-              <Pressable
-                style={styles.profileDot}
-                hitSlop={8}
-                onPress={handleLogout}
-              />
+              <ProfileMenu size={isCompact ? 32 : 38} />
             </View>
           </View>
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Image,
   ImageBackground,
@@ -15,18 +15,15 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, Stack, useRouter } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
-import * as Google from "expo-auth-session/providers/google";
-import * as Crypto from "expo-crypto";
 
 import LineBackground from "../assets/images/group-R5.png";
 import HeroImage from "../assets/images/image.png";
 import LogoMark from "../assets/images/logo.svg";
 import LogoText from "../assets/images/logotext.svg";
-import { setLoggedIn, setToken, setDisplayName, setUserId } from "../lib/auth";
-import { useLogin, useGoogleLogin } from "../hooks/api";
-
-WebBrowser.maybeCompleteAuthSession();
+import { useLogin } from "../hooks/api";
+import { useAuth } from "../lib/auth-context";
+import { GoogleAuthButton } from "../components/GoogleAuthButton";
+import { useToast } from "../components/ui/Toast";
 
 const COLORS = {
   green: "#00DF56",
@@ -47,44 +44,8 @@ export default function LoginScreen() {
   const isCompact = width < 768;
 
   const { login, loading, error } = useLogin();
-  const { googleLogin, loading: googleLoading, error: googleError } = useGoogleLogin();
-
-  const rawNonceRef = useRef("");
-  const [hashedNonce, setHashedNonce] = useState("");
-
-  // Generate nonce once on mount so it's ready before useAuthRequest builds the request
-  useEffect(() => {
-    const raw = Crypto.randomUUID();
-    rawNonceRef.current = raw;
-    Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, raw).then(setHashedNonce);
-  }, []);
-
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
-    responseType: "id_token",
-    scopes: ["openid", "profile", "email"],
-    extraParams: hashedNonce ? { nonce: hashedNonce } : {},
-  });
-
-  const handleGooglePress = () => promptAsync();
-
-  useEffect(() => {
-    if (response?.type === "success") {
-      const idToken = response.params?.id_token;
-      if (idToken) {
-        // Send raw nonce — supabase-py passes it as-is to GoTrue which compares directly to token claim
-        googleLogin(idToken, rawNonceRef.current).then(async (result) => {
-          if (result) {
-            await setToken(result.access_token);
-            await setDisplayName(result.display_name);
-            await setUserId(result.user_id);
-            await setLoggedIn(true);
-            router.replace("/(tabs)");
-          }
-        });
-      }
-    }
-  }, [response, googleLogin, router]);
+  const { signIn } = useAuth();
+  const toast = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -210,10 +171,12 @@ export default function LoginScreen() {
                   if (!password.trim()) { setFormError("Password is required."); return; }
                   const result = await login({ email: email.trim(), password });
                   if (result) {
-                    await setToken(result.access_token);
-                    await setDisplayName(result.display_name);
-                    await setUserId(result.user_id);
-                    await setLoggedIn(true);
+                    await signIn({
+                      userId: result.user_id,
+                      displayName: result.display_name,
+                      accessToken: result.access_token,
+                    });
+                    toast.success(`Welcome back, ${result.display_name}!`);
                     router.replace("/(tabs)");
                   }
                 }}
@@ -227,22 +190,12 @@ export default function LoginScreen() {
                 <View style={styles.dividerLine} />
               </View>
 
-              <Pressable
-                style={[styles.googleButton, (googleLoading || !request) && { opacity: 0.6 }]}
-                disabled={googleLoading || !request}
-                onPress={handleGooglePress}
-              >
-                <Ionicons name="logo-google" size={20} color={COLORS.primaryText} style={{ marginRight: 8 }} />
-                <Text style={styles.googleButtonText}>
-                  {googleLoading ? "Logging in…" : "Continue with Google"}
-                </Text>
-              </Pressable>
-
-              {googleError ? (
-                <Text style={{ color: "#c0392b", fontWeight: "700", fontSize: 13, marginBottom: 8, textAlign: "center" }}>
-                  {googleError}
-                </Text>
-              ) : null}
+              <View style={styles.googleSlot}>
+                <GoogleAuthButton
+                  mode="signin"
+                  onError={(msg) => toast.error(msg)}
+                />
+              </View>
 
               <View style={styles.footerRow}>
                 <Text style={styles.footerText}>Don’t have an account? </Text>
@@ -502,23 +455,10 @@ function createStyles(isCompact) {
       fontSize: isCompact ? 13 : 15,
       fontWeight: "600",
     },
-    googleButton: {
+    googleSlot: {
       alignSelf: "center",
       width: isCompact ? "100%" : 300,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 2,
-      borderColor: COLORS.blue,
-      borderRadius: 999,
-      paddingVertical: 10,
       marginBottom: 10,
-      backgroundColor: COLORS.white,
-    },
-    googleButtonText: {
-      color: COLORS.primaryText,
-      fontSize: isCompact ? 15 : 16,
-      fontWeight: "700",
     },
     modalBackdrop: {
       flex: 1,
