@@ -47,27 +47,26 @@ def register_routes(app):
         return {"status": "ok"}, 200
 
 
-    @app.route("/auth", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-    @app.route("/auth/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+    @app.route("/auth", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE"])
+    @app.route("/auth/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
     def auth_proxy(path):
         print("HIT GATEWAY AUTH ROUTE:", request.path)
-
         return forward_request(app.config["AUTH_SERVICE_URL"], path)
 
 
-    @app.route("/reviews", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-    @app.route("/reviews/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+    @app.route("/reviews", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE"])
+    @app.route("/reviews/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
     def review_proxy(path):
         return forward_request(app.config["REVIEW_SERVICE_URL"], path)
 
 
-    @app.route("/media", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-    @app.route("/media/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+    @app.route("/media", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE"])
+    @app.route("/media/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
     def media_proxy(path):
         return forward_request(app.config["MEDIA_SERVICE_URL"], path)
 
 
-    @app.route("/trails", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-    @app.route("/trails/<path:path>", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+    @app.route("/trails", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE"])
+    @app.route("/trails/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
     def trail_proxy(path):
         return forward_request(app.config["TRAIL_SERVICE_URL"], path)

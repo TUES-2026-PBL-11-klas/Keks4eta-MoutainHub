@@ -65,17 +65,20 @@ def signup():
 def google_login():
     data = request.json or {}
     id_token = data.get("id_token")
+    nonce = data.get("nonce")
 
     if not id_token:
         return jsonify({"message": "Missing id_token"}), 400
 
+    payload = {"provider": "google", "token": id_token}
+    if nonce:
+        payload["nonce"] = nonce
+
     try:
-        response = current_app.extensions["supabase_client"].auth.sign_in_with_id_token({
-            "provider": "google",
-            "token": id_token,
-        })
-    except Exception:
-        return jsonify({"message": "Google login failed"}), 401
+        response = current_app.extensions["supabase_client"].auth.sign_in_with_id_token(payload)
+    except Exception as e:
+        print(f"Google login error: {e}", flush=True)
+        return jsonify({"message": "Google login failed", "detail": str(e)}), 401
 
     display_name = (
         response.user.user_metadata.get("full_name")

@@ -145,7 +145,7 @@ export function useGoogleLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
 
-  const googleLogin = useCallback(async (idToken: string): Promise<LoginResponse | null> => {
+  const googleLogin = useCallback(async (idToken: string, nonce?: string): Promise<LoginResponse | null> => {
     setLoading(true);
     setError(null);
 
@@ -153,7 +153,7 @@ export function useGoogleLogin() {
       const r = await fetch(`${API_URL}/auth/google`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ id_token: idToken }),
+        body:    JSON.stringify({ id_token: idToken, nonce }),
       });
 
       if (!r.ok) {

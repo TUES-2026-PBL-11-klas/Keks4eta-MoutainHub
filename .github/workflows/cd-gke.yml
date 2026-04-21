@@ -155,17 +155,34 @@ jobs:
       - name: Setup Helm
         uses: azure/setup-helm@v4
 
-      - name: Deploy monitoring (Prometheus + Grafana)
+      - name: Deploy monitoring (Prometheus + Grafana + Loki)
         run: |
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add grafana https://grafana.github.io/helm-charts
           helm repo update
           kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+
+          # Disable admission webhooks — they create ClusterRoles which require cluster-admin RBAC
           helm upgrade --install kube-prometheus-stack \
             prometheus-community/kube-prometheus-stack \
             --namespace monitoring \
             --set grafana.adminPassword="${{ secrets.GRAFANA_PASSWORD }}" \
             --set grafana.service.type=LoadBalancer \
             --set prometheus.prometheusSpec.retention=7d \
+            --set prometheusOperator.admissionWebhooks.enabled=false \
+            --set prometheusOperator.admissionWebhooks.patch.enabled=false \
+            --set grafana.additionalDataSources[0].name=Loki \
+            --set grafana.additionalDataSources[0].type=loki \
+            --set grafana.additionalDataSources[0].url=http://loki:3100 \
+            --set grafana.additionalDataSources[0].access=proxy \
+            --timeout=5m \
+            --wait
+
+          # Install Loki + Promtail (collects logs from all pods and ships to Loki)
+          helm upgrade --install loki grafana/loki-stack \
+            --namespace monitoring \
+            --set promtail.enabled=true \
+            --set loki.persistence.enabled=false \
             --timeout=5m \
             --wait
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Image,
   ImageBackground,
@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Link, Stack, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
+import * as Crypto from "expo-crypto";
 
 import LineBackground from "../assets/images/group-R5.png";
 import HeroImage from "../assets/images/image.png";
@@ -48,17 +49,31 @@ export default function LoginScreen() {
   const { login, loading, error } = useLogin();
   const { googleLogin, loading: googleLoading, error: googleError } = useGoogleLogin();
 
+  const rawNonceRef = useRef("");
+  const [hashedNonce, setHashedNonce] = useState("");
+
+  // Generate nonce once on mount so it's ready before useAuthRequest builds the request
+  useEffect(() => {
+    const raw = Crypto.randomUUID();
+    rawNonceRef.current = raw;
+    Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, raw).then(setHashedNonce);
+  }, []);
+
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
     responseType: "id_token",
     scopes: ["openid", "profile", "email"],
+    extraParams: hashedNonce ? { nonce: hashedNonce } : {},
   });
+
+  const handleGooglePress = () => promptAsync();
 
   useEffect(() => {
     if (response?.type === "success") {
       const idToken = response.params?.id_token;
       if (idToken) {
-        googleLogin(idToken).then(async (result) => {
+        // Send raw nonce — supabase-py passes it as-is to GoTrue which compares directly to token claim
+        googleLogin(idToken, rawNonceRef.current).then(async (result) => {
           if (result) {
             await setToken(result.access_token);
             await setDisplayName(result.display_name);
@@ -215,7 +230,7 @@ export default function LoginScreen() {
               <Pressable
                 style={[styles.googleButton, (googleLoading || !request) && { opacity: 0.6 }]}
                 disabled={googleLoading || !request}
-                onPress={() => promptAsync()}
+                onPress={handleGooglePress}
               >
                 <Ionicons name="logo-google" size={20} color={COLORS.primaryText} style={{ marginRight: 8 }} />
                 <Text style={styles.googleButtonText}>
