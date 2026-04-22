@@ -77,7 +77,6 @@ def google_login():
     try:
         response = current_app.extensions["supabase_client"].auth.sign_in_with_id_token(payload)
     except Exception as e:
-        print(f"Google login error: {e}", flush=True)
         return jsonify({"message": "Google login failed", "detail": str(e)}), 401
 
     display_name = (

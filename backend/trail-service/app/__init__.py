@@ -13,7 +13,6 @@ def create_app():
     
     supabase: Client = create_client(supabase_url, supabase_key)
     app.extensions["supabase_client"] = supabase
-    print("Supabase client initialized")
 
     from .routes import trails_bp
     app.register_blueprint(trails_bp)

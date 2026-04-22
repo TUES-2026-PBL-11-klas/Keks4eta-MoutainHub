@@ -13,7 +13,6 @@ def create_app():
 
     app.extensions["supabase_client"] = create_client(supabase_url, supabase_key)
     app.extensions["supabase_admin_client"] = create_client(supabase_url, supabase_key)
-    print("Supabase clients initialized")
 
     from .routes import auth_bp
     app.register_blueprint(auth_bp)

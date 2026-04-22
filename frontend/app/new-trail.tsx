@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   ImageBackground,
   Platform,
@@ -17,7 +17,7 @@ import { Image } from "expo-image";
 
 import LineBackground from "@/assets/images/group-R5.svg";
 import { useCreateTrail } from "@/hooks/api";
-import { getToken } from "@/lib/auth";
+import { useAuth } from "@/lib/auth-context";
 
 const COLORS = {
   green: "#00DF56",
@@ -113,8 +113,8 @@ export default function NewTrailScreen() {
   const isCompact = width < 768;
   const styles = useMemo(() => createStyles(isCompact), [isCompact]);
 
-  const [token, setToken] = useState("");
-  const { createTrail, loading, error } = useCreateTrail(token);
+  const { token } = useAuth();
+  const { createTrail, loading, error } = useCreateTrail(token ?? "");
 
   const [trailName, setTrailName] = useState("");
   const [trailDescription, setTrailDescription] = useState("");
@@ -130,10 +130,6 @@ export default function NewTrailScreen() {
   const [gpxParseError, setGpxParseError] = useState<string | null>(null);
 
   const fileInputRef = useRef<any>(null);
-
-  useEffect(() => {
-    getToken().then((t) => setToken(t ?? ""));
-  }, []);
 
   const handlePickGpx = () => {
     if (Platform.OS === "web") {

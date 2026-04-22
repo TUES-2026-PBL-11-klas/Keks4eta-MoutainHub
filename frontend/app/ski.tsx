@@ -18,6 +18,7 @@ import LineBackground from "@/assets/images/group-R5.svg";
 import { PostDetailsModal, type FeedPost } from "@/components/post-details-modal";
 import { useTrails, useCategoryReviews } from "@/hooks/api";
 import Map from "@/components/Map";
+import { ProfileMenu } from "@/components/ProfileMenu";
 
 const COLORS = {
   green: "#00DF56",
@@ -124,7 +125,7 @@ export default function SkiHome() {
                 <Pressable style={styles.iconButton} onPress={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}>
                   <Ionicons name="arrow-up-outline" size={20} color={COLORS.dark} />
                 </Pressable>
-                <Pressable style={styles.profileDot} onPress={() => router.push("/profile")} hitSlop={8} />
+                <ProfileMenu size={isCompact ? 28 : 36} />
               </View>
             </View>
           </View>

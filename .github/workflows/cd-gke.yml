@@ -62,6 +62,7 @@ jobs:
           build_push mountainhub-review      ./backend/review-service
           build_push mountainhub-trail       ./backend/trail-service
           build_push mountainhub-media       ./backend/media-service
+          build_push mountainhub-posts       ./backend/posts-service
           build_push mountainhub-frontend    ./frontend
 
           echo "IMAGE_TAG=${TAG}" >> $GITHUB_ENV
@@ -120,6 +121,7 @@ jobs:
           kubectl apply -f infrastructure/k8s/backend/review-service/service.yaml
           kubectl apply -f infrastructure/k8s/backend/trail-service/service.yaml
           kubectl apply -f infrastructure/k8s/backend/media-service/service.yaml
+          kubectl apply -f infrastructure/k8s/backend/posts-service/service.yaml
           kubectl apply -f infrastructure/k8s/frontend/service.yaml
 
       # -------------------------
@@ -132,6 +134,7 @@ jobs:
           kubectl apply -f infrastructure/k8s/backend/review-service/deployment.yaml
           kubectl apply -f infrastructure/k8s/backend/trail-service/deployment.yaml
           kubectl apply -f infrastructure/k8s/backend/media-service/deployment.yaml
+          kubectl apply -f infrastructure/k8s/backend/posts-service/deployment.yaml
           kubectl apply -f infrastructure/k8s/frontend/deployment.yaml
 
       # -------------------------
@@ -142,12 +145,13 @@ jobs:
           BASE="${REGISTRY_HOST}/${PROJECT_ID}/${REPOSITORY}"
           TAG="${IMAGE_TAG}"
 
-          kubectl set image deployment/api-gateway  api-gateway="${BASE}/mountainhub-api-gateway:${TAG}" -n "$NAMESPACE"
-          kubectl set image deployment/auth-service  auth-service="${BASE}/mountainhub-auth:${TAG}"       -n "$NAMESPACE"
-          kubectl set image deployment/review-service review-service="${BASE}/mountainhub-review:${TAG}" -n "$NAMESPACE"
-          kubectl set image deployment/trail-service  trail-service="${BASE}/mountainhub-trail:${TAG}"   -n "$NAMESPACE"
-          kubectl set image deployment/media-service  media-service="${BASE}/mountainhub-media:${TAG}"   -n "$NAMESPACE"
-          kubectl set image deployment/frontend       frontend="${BASE}/mountainhub-frontend:${TAG}"     -n "$NAMESPACE"
+          kubectl set image deployment/api-gateway    api-gateway="${BASE}/mountainhub-api-gateway:${TAG}"  -n "$NAMESPACE"
+          kubectl set image deployment/auth-service   auth-service="${BASE}/mountainhub-auth:${TAG}"        -n "$NAMESPACE"
+          kubectl set image deployment/review-service review-service="${BASE}/mountainhub-review:${TAG}"    -n "$NAMESPACE"
+          kubectl set image deployment/trail-service  trail-service="${BASE}/mountainhub-trail:${TAG}"      -n "$NAMESPACE"
+          kubectl set image deployment/media-service  media-service="${BASE}/mountainhub-media:${TAG}"      -n "$NAMESPACE"
+          kubectl set image deployment/posts-service  posts-service="${BASE}/mountainhub-posts:${TAG}"      -n "$NAMESPACE"
+          kubectl set image deployment/frontend       frontend="${BASE}/mountainhub-frontend:${TAG}"        -n "$NAMESPACE"
 
       # -------------------------
       # 10. Deploy Prometheus + Grafana
@@ -191,11 +195,12 @@ jobs:
       # -------------------------
       - name: Wait for rollouts
         run: |
-          kubectl rollout status deployment/api-gateway   -n "$NAMESPACE" --timeout=120s
-          kubectl rollout status deployment/auth-service  -n "$NAMESPACE" --timeout=120s
+          kubectl rollout status deployment/api-gateway    -n "$NAMESPACE" --timeout=120s
+          kubectl rollout status deployment/auth-service   -n "$NAMESPACE" --timeout=120s
           kubectl rollout status deployment/review-service -n "$NAMESPACE" --timeout=120s
           kubectl rollout status deployment/trail-service  -n "$NAMESPACE" --timeout=120s
           kubectl rollout status deployment/media-service  -n "$NAMESPACE" --timeout=120s
+          kubectl rollout status deployment/posts-service  -n "$NAMESPACE" --timeout=120s
           kubectl rollout status deployment/frontend       -n "$NAMESPACE" --timeout=120s
 
       # -------------------------

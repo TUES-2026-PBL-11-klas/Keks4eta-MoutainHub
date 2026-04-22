@@ -13,7 +13,6 @@ def create_app():
     
     supabase: Client = create_client(supabase_url, supabase_key)
     app.extensions["supabase_client"] = supabase
-    print("Supabase client initialized")
 
     from .routes import review_bp
     app.register_blueprint(review_bp)

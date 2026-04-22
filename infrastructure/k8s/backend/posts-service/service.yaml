@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: posts-service
+  namespace: mountainhub
+  labels:
+    app: posts-service
+spec:
+  selector:
+    app: posts-service
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000

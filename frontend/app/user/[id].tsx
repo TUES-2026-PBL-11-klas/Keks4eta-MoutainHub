@@ -1,28 +1,20 @@
-import React, { useMemo } from "react";
-import { ImageBackground, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import React from "react";
+import { ImageBackground, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 
 import LineBackground from "@/assets/images/group-R5.svg";
 import { useUser, useUserTrails, useUserReviews } from "@/hooks/api";
-
-const COLORS = {
-  blue: "#9AB8F4",
-  primaryText: "#416AA6",
-  mutedText: "#6D88B6",
-  card: "#F6F8FC",
-  fieldBg: "#EEF3FB",
-  white: "#FFFFFF",
-  dark: "#111111",
-};
+import { Skeleton } from "@/components/ui/Skeleton";
+import { Colors, Space, Radii, FontSize } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function UserProfileScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { width } = useWindowDimensions();
-  const isCompact = width < 768;
-  const styles = useMemo(() => createStyles(isCompact), [isCompact]);
+  const scheme = useColorScheme() ?? "light";
+  const palette = Colors[scheme];
 
   const id = typeof params.id === "string" ? params.id : "";
   const { user, loading: userLoading } = useUser(id);
@@ -32,50 +24,60 @@ export default function UserProfileScreen() {
   const displayName = user?.display_name || user?.email || "Unknown user";
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: palette.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="dark-content" />
 
       <ImageBackground source={LineBackground} resizeMode="cover" style={styles.background} imageStyle={styles.backgroundImage}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.topRow}>
-            <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={8}>
-              <Ionicons name="chevron-back" size={18} color={COLORS.primaryText} />
-              <Text style={styles.backText}>Back</Text>
+            <Pressable onPress={() => router.back()} style={[styles.backButton, { backgroundColor: "rgba(255,255,255,0.9)", borderColor: "rgba(154,184,244,0.6)" }]} hitSlop={8}>
+              <Ionicons name="chevron-back" size={18} color={palette.primary} />
+              <Text style={[styles.backText, { color: palette.primary }]}>Back</Text>
             </Pressable>
             <Pressable onPress={() => router.replace("/(tabs)")} hitSlop={8}>
               <Image source={require("@/assets/images/logo.svg")} style={styles.logoMark} contentFit="contain" />
             </Pressable>
           </View>
 
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
             {userLoading ? (
-              <Text style={styles.bio}>Loading…</Text>
+              <>
+                <Skeleton height={32} width="50%" radius={8} style={{ marginBottom: Space.xs }} />
+                <Skeleton height={16} width="70%" radius={6} style={{ marginBottom: Space.md }} />
+              </>
             ) : (
               <>
-                <Text style={styles.name}>{displayName}</Text>
-                {user?.email ? <Text style={styles.bio}>{user.email}</Text> : null}
+                <Text style={[styles.name, { color: palette.primary }]}>{displayName}</Text>
+                {user?.bio ? <Text style={[styles.bio, { color: palette.mutedText }]}>{user.bio}</Text> : null}
+                {user?.location ? (
+                  <View style={styles.locationRow}>
+                    <Ionicons name="location-outline" size={14} color={palette.mutedText} />
+                    <Text style={[styles.bio, { color: palette.mutedText }]}>{user.location}</Text>
+                  </View>
+                ) : null}
               </>
             )}
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Trails</Text>
+              <Text style={[styles.sectionTitle, { color: palette.primary }]}>Trails</Text>
               {trailsLoading ? (
-                <View style={styles.item}>
-                  <Text style={styles.itemText}>Loading…</Text>
+                <View style={{ gap: Space.xs }}>
+                  <Skeleton height={44} radius={Radii.md} />
+                  <Skeleton height={44} radius={Radii.md} />
                 </View>
               ) : trails.length === 0 ? (
-                <View style={styles.item}>
-                  <Ionicons name="map-outline" size={16} color={COLORS.primaryText} />
-                  <Text style={styles.itemText}>No trails yet.</Text>
+                <View style={[styles.item, { backgroundColor: palette.fieldBg, borderColor: palette.border }]}>
+                  <Ionicons name="map-outline" size={16} color={palette.primary} />
+                  <Text style={[styles.itemText, { color: palette.mutedText }]}>No trails yet.</Text>
                 </View>
               ) : (
                 trails.map((trail) => (
-                  <View key={trail.id} style={styles.item}>
-                    <Ionicons name="map-outline" size={16} color={COLORS.primaryText} />
-                    <Text style={styles.itemText}>{trail.name}</Text>
+                  <View key={trail.id} style={[styles.item, { backgroundColor: palette.fieldBg, borderColor: palette.border }]}>
+                    <Ionicons name="map-outline" size={16} color={palette.primary} />
+                    <Text style={[styles.itemText, { color: palette.mutedText }]}>{trail.name}</Text>
                     {trail.distance_km ? (
-                      <Text style={[styles.itemText, { marginLeft: "auto" }]}>{trail.distance_km.toFixed(1)} km</Text>
+                      <Text style={[styles.itemText, { marginLeft: "auto", color: palette.mutedText }]}>{trail.distance_km.toFixed(1)} km</Text>
                     ) : null}
                   </View>
                 ))
@@ -83,22 +85,23 @@ export default function UserProfileScreen() {
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Reviews</Text>
+              <Text style={[styles.sectionTitle, { color: palette.primary }]}>Reviews</Text>
               {reviewsLoading ? (
-                <View style={styles.item}>
-                  <Text style={styles.itemText}>Loading…</Text>
+                <View style={{ gap: Space.xs }}>
+                  <Skeleton height={44} radius={Radii.md} />
+                  <Skeleton height={44} radius={Radii.md} />
                 </View>
               ) : reviews.length === 0 ? (
-                <View style={styles.item}>
-                  <Ionicons name="star-outline" size={16} color={COLORS.primaryText} />
-                  <Text style={styles.itemText}>No reviews yet.</Text>
+                <View style={[styles.item, { backgroundColor: palette.fieldBg, borderColor: palette.border }]}>
+                  <Ionicons name="star-outline" size={16} color={palette.primary} />
+                  <Text style={[styles.itemText, { color: palette.mutedText }]}>No reviews yet.</Text>
                 </View>
               ) : (
                 reviews.map((review) => (
-                  <View key={review.id} style={[styles.item, { marginBottom: 6 }]}>
-                    <Ionicons name="star" size={16} color={COLORS.primaryText} />
-                    <Text style={styles.itemText}>{review.name}</Text>
-                    <Text style={[styles.itemText, { marginLeft: "auto" }]}>{"★".repeat(review.rating)}</Text>
+                  <View key={review.id} style={[styles.item, { backgroundColor: palette.fieldBg, borderColor: palette.border, marginBottom: 6 }]}>
+                    <Ionicons name="star" size={16} color={palette.primary} />
+                    <Text style={[styles.itemText, { color: palette.mutedText }]}>{review.name}</Text>
+                    <Text style={[styles.itemText, { marginLeft: "auto", color: palette.primary }]}>{"★".repeat(review.rating)}</Text>
                   </View>
                 ))
               )}
@@ -110,58 +113,50 @@ export default function UserProfileScreen() {
   );
 }
 
-function createStyles(isCompact: boolean) {
-  return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: COLORS.white },
-    background: { flex: 1 },
-    backgroundImage: { opacity: 0.23 },
-    content: {
-      paddingTop: Platform.OS === "android" ? 18 : 22,
-      paddingBottom: 18,
-      paddingHorizontal: isCompact ? 14 : 28,
-    },
-    topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-    backButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-      paddingVertical: 8,
-      paddingHorizontal: 10,
-      borderRadius: 999,
-      backgroundColor: "rgba(255,255,255,0.9)",
-      borderWidth: 1,
-      borderColor: "rgba(154,184,244,0.6)",
-    },
-    backText: { color: COLORS.primaryText, fontWeight: "900", fontSize: 13 },
-    logoMark: { width: 38, height: 46 },
-    card: {
-      width: "100%",
-      backgroundColor: COLORS.white,
-      borderRadius: 28,
-      padding: 16,
-      borderWidth: 2,
-      borderColor: COLORS.blue,
-      shadowColor: "#2B4D7A",
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.14,
-      shadowRadius: 18,
-      elevation: 10,
-    },
-    name: { color: COLORS.primaryText, fontSize: 28, fontWeight: "900" },
-    bio: { color: COLORS.mutedText, fontSize: 13, fontWeight: "700", marginTop: 6, marginBottom: 12 },
-    section: { marginTop: 10 },
-    sectionTitle: { color: COLORS.primaryText, fontSize: 15, fontWeight: "900", marginBottom: 8 },
-    item: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-      padding: 10,
-      borderRadius: 18,
-      backgroundColor: COLORS.card,
-      borderWidth: 1,
-      borderColor: "rgba(154,184,244,0.65)",
-    },
-    itemText: { color: COLORS.mutedText, fontWeight: "700" },
-  });
-}
-
+const styles = StyleSheet.create({
+  screen: { flex: 1 },
+  background: { flex: 1 },
+  backgroundImage: { opacity: 0.23 },
+  content: {
+    paddingTop: Platform.OS === "android" ? 18 : 22,
+    paddingBottom: 18,
+    paddingHorizontal: 16,
+  },
+  topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: Radii.pill,
+    borderWidth: 1,
+  },
+  backText: { fontWeight: "900", fontSize: FontSize.sm },
+  logoMark: { width: 38, height: 46 },
+  card: {
+    width: "100%",
+    borderRadius: Radii.lg,
+    padding: Space.md,
+    borderWidth: 2,
+    shadowColor: "#2B4D7A",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.14,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  locationRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
+  name: { fontSize: 28, fontWeight: "900" },
+  bio: { fontSize: FontSize.sm, fontWeight: "700", marginTop: 4, marginBottom: Space.sm },
+  section: { marginTop: Space.sm, gap: Space.xs },
+  sectionTitle: { fontSize: FontSize.md, fontWeight: "900", marginBottom: Space.xs },
+  item: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 10,
+    borderRadius: Radii.md,
+    borderWidth: 1,
+  },
+  itemText: { fontWeight: "700" },
+});
