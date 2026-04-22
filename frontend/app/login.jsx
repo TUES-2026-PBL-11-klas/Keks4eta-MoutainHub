@@ -22,6 +22,7 @@ import LogoMark from "../assets/images/logo.svg";
 import LogoText from "../assets/images/logotext.svg";
 import { useLogin } from "../hooks/api";
 import { useAuth } from "../lib/auth-context";
+import { requestPasswordReset } from "../hooks/auth";
 import { GoogleAuthButton } from "../components/GoogleAuthButton";
 import { useToast } from "../components/ui/Toast";
 
@@ -249,7 +250,10 @@ export default function LoginScreen() {
               </Pressable>
               <Pressable
                 style={[styles.modalButton, styles.modalButtonPrimary]}
-                onPress={() => setForgotSent(true)}
+                onPress={async () => {
+                  await requestPasswordReset(forgotEmail);
+                  setForgotSent(true);
+                }}
               >
                 <Text style={styles.modalButtonText}>Send</Text>
               </Pressable>

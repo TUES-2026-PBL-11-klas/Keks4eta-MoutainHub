@@ -237,3 +237,11 @@ export function useUser(userId: string) {
 
   return { user, loading, error };
 }
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  await fetch(`${API_URL}/auth/password-reset`, {
+    method:  "POST",
+    headers: { "Content-Type": "application/json" },
+    body:    JSON.stringify({ email }),
+  });
+}

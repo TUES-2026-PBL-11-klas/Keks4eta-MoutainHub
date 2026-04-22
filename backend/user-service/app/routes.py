@@ -100,6 +100,18 @@ def google_login():
 def logout():
     return jsonify({"message": "Logout successful"}), 200
 
+@auth_bp.route("/password-reset", methods=["POST"])
+def password_reset():
+    data = request.json or {}
+    email = data.get("email", "").strip()
+    if not email:
+        return jsonify({"message": "Email required"}), 400
+    try:
+        current_app.extensions["supabase_client"].auth.reset_password_for_email(email)
+    except Exception:
+        pass
+    return jsonify({"message": "If the email exists, a reset link has been sent."}), 200
+
 @auth_bp.route("/user/me", methods=["PATCH"])
 @require_auth
 def update_me():
