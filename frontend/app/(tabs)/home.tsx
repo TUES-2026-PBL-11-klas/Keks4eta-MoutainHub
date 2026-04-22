@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ImageBackground,
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -86,7 +87,7 @@ export default function HomeConceptScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="dark-content" />
 
@@ -242,7 +243,7 @@ export default function HomeConceptScreen() {
           </View>
         </ScrollView>
       </ImageBackground>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
