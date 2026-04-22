@@ -101,6 +101,26 @@ def google_login():
 def logout():
     return jsonify({"message": "Logout successful"}), 200
 
+@auth_bp.route("/user/me", methods=["PATCH"])
+@require_auth
+def update_me():
+    data = request.json or {}
+    allowed = {"display_name", "bio", "location", "avatar_url"}
+    patch = {k: v for k, v in data.items() if k in allowed}
+
+    if not patch:
+        return jsonify({"message": "No valid fields provided"}), 400
+
+    try:
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        supabase = current_app.extensions["supabase_client"]
+        supabase.auth.set_session(token, "")
+        supabase.auth.update_user({"data": patch})
+        return jsonify({"message": "Profile updated"}), 200
+    except Exception as e:
+        return jsonify({"message": "Update failed", "detail": str(e)}), 500
+
+
 @auth_bp.route("/user/<string:user_id>", methods=["GET"])
 def get_user(user_id):
     try:
@@ -110,11 +130,15 @@ def get_user(user_id):
             return jsonify({"error": "User not found"}), 404
 
         user_data = response.user
+        meta = user_data.user_metadata or {}
 
         return jsonify({
             "user_id": user_data.id,
             "email": user_data.email,
-            "display_name": user_data.user_metadata.get("display_name", "")
+            "display_name": meta.get("display_name", ""),
+            "bio": meta.get("bio", ""),
+            "location": meta.get("location", ""),
+            "avatar_url": meta.get("avatar_url", None),
         }), 200
 
     except Exception:

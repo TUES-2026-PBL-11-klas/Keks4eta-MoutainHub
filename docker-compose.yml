@@ -6,6 +6,7 @@ services:
     depends_on:
       - auth-service
       - review-service
+      - posts-service
     environment:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
@@ -14,6 +15,7 @@ services:
       - REVIEW_SERVICE_URL=${REVIEW_SERVICE_URL}
       - MEDIA_SERVICE_URL=${MEDIA_SERVICE_URL}
       - TRAIL_SERVICE_URL=${TRAIL_SERVICE_URL}
+      - POSTS_SERVICE_URL=${POSTS_SERVICE_URL}
 
   auth-service:
     build: ./backend/user-service
@@ -62,5 +64,17 @@ services:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_KEY=${SUPABASE_KEY}
       - SUPABASE_BUCKET=${SUPABASE_BUCKET_MEDIA}
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+
+  posts-service:
+    build: ./backend/posts-service
+    expose:
+      - "5000"
+    volumes:
+      - ./backend/posts-service:/app
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
       - FLASK_ENV=development
       - FLASK_DEBUG=1

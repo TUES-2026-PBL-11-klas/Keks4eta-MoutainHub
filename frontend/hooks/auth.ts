@@ -34,6 +34,16 @@ export interface UserProfile {
   user_id: string;
   email: string;
   display_name: string;
+  bio: string;
+  location: string;
+  avatar_url: string | null;
+}
+
+export interface UpdateProfilePayload {
+  display_name?: string;
+  bio?: string;
+  location?: string;
+  avatar_url?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -172,6 +182,38 @@ export function useGoogleLogin() {
   }, []);
 
   return { googleLogin, loading, error };
+}
+
+export function useUpdateProfile(accessToken: string) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState<string | null>(null);
+
+  const updateProfile = useCallback(async (payload: UpdateProfilePayload): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetch(`${API_URL}/auth/user/me`, {
+        method:  "PATCH",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) {
+        const body = await r.json().catch(() => ({}));
+        throw new Error(body.message ?? `HTTP ${r.status}`);
+      }
+      setLoading(false);
+      return true;
+    } catch (e: any) {
+      setError(e.message);
+      setLoading(false);
+      return false;
+    }
+  }, [accessToken]);
+
+  return { updateProfile, loading, error };
 }
 
 export function useUser(userId: string) {

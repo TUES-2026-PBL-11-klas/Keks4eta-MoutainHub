@@ -47,26 +47,31 @@ def register_routes(app):
         return {"status": "ok"}, 200
 
 
-    @app.route("/auth", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE"])
-    @app.route("/auth/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
+    @app.route("/auth", defaults={"path": ""}, methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+    @app.route("/auth/<path:path>", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     def auth_proxy(path):
-        print("HIT GATEWAY AUTH ROUTE:", request.path)
         return forward_request(app.config["AUTH_SERVICE_URL"], path)
 
 
-    @app.route("/reviews", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE"])
-    @app.route("/reviews/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
+    @app.route("/reviews", defaults={"path": ""}, methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+    @app.route("/reviews/<path:path>", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     def review_proxy(path):
         return forward_request(app.config["REVIEW_SERVICE_URL"], path)
 
 
-    @app.route("/media", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE"])
-    @app.route("/media/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
+    @app.route("/media", defaults={"path": ""}, methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+    @app.route("/media/<path:path>", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     def media_proxy(path):
         return forward_request(app.config["MEDIA_SERVICE_URL"], path)
 
 
-    @app.route("/trails", defaults={"path": ""}, methods=["GET", "POST", "PUT", "DELETE"])
-    @app.route("/trails/<path:path>", methods=["GET", "POST", "PUT", "DELETE"])
+    @app.route("/trails", defaults={"path": ""}, methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+    @app.route("/trails/<path:path>", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
     def trail_proxy(path):
         return forward_request(app.config["TRAIL_SERVICE_URL"], path)
+
+
+    @app.route("/posts", defaults={"path": ""}, methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+    @app.route("/posts/<path:path>", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+    def posts_proxy(path):
+        return forward_request(app.config["POSTS_SERVICE_URL"], path)
