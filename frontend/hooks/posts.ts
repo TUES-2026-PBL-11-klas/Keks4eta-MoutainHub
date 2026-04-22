@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { notifyUnauthorized } from "@/lib/auth";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
 
@@ -127,6 +128,7 @@ export function useCreatePost(accessToken: string) {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify(payload),
       });
+      if (r.status === 401) { notifyUnauthorized(); setLoading(false); return null; }
       if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b.message ?? `HTTP ${r.status}`); }
       const data: Post = await r.json();
       setLoading(false);
@@ -149,6 +151,7 @@ export function useDeletePost(accessToken: string) {
         method: "DELETE",
         headers: { Authorization: `Bearer ${accessToken}` },
       });
+      if (r.status === 401) { notifyUnauthorized(); setLoading(false); return false; }
       if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b.message ?? `HTTP ${r.status}`); }
       setLoading(false);
       return true;
@@ -195,6 +198,7 @@ export function useCreateComment(accessToken: string) {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify(payload),
       });
+      if (r.status === 401) { notifyUnauthorized(); setLoading(false); return null; }
       if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b.message ?? `HTTP ${r.status}`); }
       const data: Comment = await r.json();
       setLoading(false);
@@ -217,6 +221,7 @@ export function useDeleteComment(accessToken: string) {
         method: "DELETE",
         headers: { Authorization: `Bearer ${accessToken}` },
       });
+      if (r.status === 401) { notifyUnauthorized(); setLoading(false); return false; }
       if (!r.ok) { const b = await r.json().catch(() => ({})); throw new Error(b.message ?? `HTTP ${r.status}`); }
       setLoading(false);
       return true;

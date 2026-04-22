@@ -60,3 +60,13 @@ export async function logout() {
     AsyncStorage.removeItem(AVATAR_URL_KEY),
   ]);
 }
+
+let _onUnauthorized: (() => void) | null = null;
+
+export function registerUnauthorizedHandler(fn: () => void) {
+  _onUnauthorized = fn;
+}
+
+export function notifyUnauthorized() {
+  _onUnauthorized?.();
+}

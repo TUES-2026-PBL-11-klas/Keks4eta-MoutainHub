@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { notifyUnauthorized } from "@/lib/auth";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
 
@@ -200,6 +201,7 @@ export function useUpdateProfile(accessToken: string) {
         },
         body: JSON.stringify(payload),
       });
+      if (r.status === 401) { notifyUnauthorized(); setLoading(false); return false; }
       if (!r.ok) {
         const body = await r.json().catch(() => ({}));
         throw new Error(body.message ?? `HTTP ${r.status}`);

@@ -6,6 +6,7 @@ import {
   getUserId,
   isLoggedIn,
   logout as clearAuth,
+  registerUnauthorizedHandler,
   setAvatarUrl as persistAvatar,
   setDisplayName as persistDisplayName,
   setLoggedIn as persistLoggedIn,
@@ -46,6 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     token: null,
     user: null,
   });
+
+  useEffect(() => {
+    registerUnauthorizedHandler(() => {
+      clearAuth().then(() =>
+        setState({ ready: true, isAuthed: false, token: null, user: null })
+      );
+    });
+  }, []);
 
   useEffect(() => {
     (async () => {
